@@ -1,14 +1,20 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+
 const app = express();
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname))); 
 
-const pedidosFile = './pedidos.json';
-const inventarioFile = './inventario.json';
-const menuFile = './menu.json'; // NUEVO ARCHIVO DE PRECIOS
+// Determinar el directorio escribible (usar /tmp en Vercel/Producción para evitar error EROFS)
+const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
+const storageDir = isVercel ? os.tmpdir() : __dirname;
+
+const pedidosFile = path.join(storageDir, 'pedidos.json');
+const inventarioFile = path.join(storageDir, 'inventario.json');
+const menuFile = path.join(storageDir, 'menu.json');
 
 // --- BASES DE DATOS INICIALES ---
 const menuBase = {
@@ -46,30 +52,43 @@ const menuBase = {
 
 const inventarioBase = {};
 for (let categoria in menuBase) {
-    menuBase[categoria].forEach(item => inventarioBase[item.nombre] = 20); // 20 de inventario para todo
+    menuBase[categoria].forEach(item => inventarioBase[item.nombre] = 20);
 }
 
-// Inicializadores
-if (!fs.existsSync(pedidosFile)) fs.writeFileSync(pedidosFile, '[]');
-if (!fs.existsSync(inventarioFile) || fs.readFileSync(inventarioFile, 'utf8').trim() === '{}') {
-    fs.writeFileSync(inventarioFile, JSON.stringify(inventarioBase, null, 2));
+// Inicializador con captura de errores
+function inicializarArchivos() {
+    try {
+        if (!fs.existsSync(pedidosFile)) fs.writeFileSync(pedidosFile, '[]');
+        if (!fs.existsSync(inventarioFile)) fs.writeFileSync(inventarioFile, JSON.stringify(inventarioBase, null, 2));
+        if (!fs.existsSync(menuFile)) fs.writeFileSync(menuFile, JSON.stringify(menuBase, null, 2));
+    } catch (e) {
+        console.error("Error al inicializar archivos temporales:", e);
+    }
 }
-if (!fs.existsSync(menuFile)) fs.writeFileSync(menuFile, JSON.stringify(menuBase, null, 2)); // Crea menú
+inicializarArchivos();
 
-function leerDatos(archivo) {
-    try { return JSON.parse(fs.readFileSync(archivo, 'utf8')); } 
-    catch(e) { return (archivo === pedidosFile) ? [] : {}; }
+function leerDatos(archivo, fallback) {
+    try {
+        if (!fs.existsSync(archivo)) return fallback;
+        return JSON.parse(fs.readFileSync(archivo, 'utf8'));
+    } catch(e) {
+        return fallback;
+    }
 }
 
 function guardarDatos(archivo, datos) {
-    fs.writeFileSync(archivo, JSON.stringify(datos, null, 2));
+    try {
+        fs.writeFileSync(archivo, JSON.stringify(datos, null, 2));
+    } catch(e) {
+        console.error("Error al guardar archivo:", e);
+    }
 }
 
 // --- RUTAS MENÚ Y PRECIOS ---
-app.get('/api/menu', (req, res) => res.json(leerDatos(menuFile)));
+app.get('/api/menu', (req, res) => res.json(leerDatos(menuFile, menuBase)));
 
 app.post('/api/menu/precio', (req, res) => {
-    let menuActual = leerDatos(menuFile);
+    let menuActual = leerDatos(menuFile, menuBase);
     const { categoria, nombre, nuevoPrecio } = req.body;
     
     if (menuActual[categoria]) {
@@ -84,9 +103,10 @@ app.post('/api/menu/precio', (req, res) => {
 });
 
 // --- RUTAS PEDIDOS Y ALMACÉN ---
-app.get('/api/pedidos', (req, res) => res.json(leerDatos(pedidosFile)));
+app.get('/api/pedidos', (req, res) => res.json(leerDatos(pedidosFile, [])));
+
 app.post('/api/pedidos', (req, res) => {
-    let pedidos = leerDatos(pedidosFile);
+    let pedidos = leerDatos(pedidosFile, []);
     let nuevoPedido = req.body;
     nuevoPedido.id = Date.now().toString(); 
     pedidos.push(nuevoPedido);
@@ -95,8 +115,8 @@ app.post('/api/pedidos', (req, res) => {
 });
 
 app.patch('/api/pedidos/:id', (req, res) => {
-    let pedidos = leerDatos(pedidosFile);
-    let inventario = leerDatos(inventarioFile);
+    let pedidos = leerDatos(pedidosFile, []);
+    let inventario = leerDatos(inventarioFile, inventarioBase);
     let index = pedidos.findIndex(p => String(p.id) === String(req.params.id));
     
     if (index !== -1) {
@@ -115,9 +135,10 @@ app.patch('/api/pedidos/:id', (req, res) => {
     }
 });
 
-app.get('/api/inventario', (req, res) => res.json(leerDatos(inventarioFile)));
+app.get('/api/inventario', (req, res) => res.json(leerDatos(inventarioFile, inventarioBase)));
+
 app.post('/api/inventario/modificar', (req, res) => {
-    let inventario = leerDatos(inventarioFile);
+    let inventario = leerDatos(inventarioFile, inventarioBase);
     const { nombre, cantidad, operacion } = req.body;
     if (inventario[nombre] === undefined) inventario[nombre] = 0;
     if (operacion === 'sumar') inventario[nombre] += parseInt(cantidad);
@@ -126,5 +147,11 @@ app.post('/api/inventario/modificar', (req, res) => {
     res.json({ success: true });
 });
 
-const PORT = 3000;
-app.listen(PORT, () => console.log(`🚀 Servidor La Queen (Con Precios Dinámicos) enpuerto ${PORT}`));
+// Inicio de servidor local si no corre como serverless en Vercel
+const PORT = process.env.PORT || 3000;
+if (!process.env.VERCEL) {
+    app.listen(PORT, () => console.log(`🚀 Servidor activo en puerto ${PORT}`));
+}
+
+// Exportar la app para Vercel Serverless Functions
+module.exports = app;
