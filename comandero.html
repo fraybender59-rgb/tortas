@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comandero - Tortas La Queen</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; display: flex; height: 100vh; }
+        .menu-lateral { width: 60%; padding: 20px; overflow-y: auto; background: #fff; }
+        .carrito-lateral { width: 40%; background: #222; color: #fff; padding: 20px; display: flex; flex-direction: column; }
+        .nav-categorias { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .btn-categoria { padding: 15px; border: none; background: #ff9800; color: white; font-weight: bold; border-radius: 8px; cursor: pointer; flex-grow: 1; font-size: 1.1rem; }
+        .btn-categoria:hover { background: #e68a00; }
+        .grid-productos { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .btn-producto { padding: 15px; background: #eeeeee; border: 2px solid #ccc; border-radius: 8px; cursor: pointer; text-align: center; font-weight: bold; }
+        .btn-producto:hover { border-color: #ff9800; background: #fff3e0; }
+        .precio-badge { display: block; color: #d32f2f; margin-top: 5px; font-size: 0.9rem; }
+        .item-carrito { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #444; align-items: center;}
+        .btn-enviar { background: #8bc34a; color: #111; padding: 15px; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; margin-top: auto; }
+        .btn-quitar { background: red; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-weight: bold;}
+    </style>
+</head>
+<body>
+    <div class="menu-lateral">
+        <h2 style="color: #d32f2f; text-align: center;">👑 TORTAS GIGANTES LA QUEEN</h2>
+        <div class="nav-categorias" id="nav-categorias">Cargando menú...</div>
+        <h3 id="titulo-categoria"></h3>
+        <div class="grid-productos" id="grid-productos"></div>
+    </div>
+    <div class="carrito-lateral">
+        <h2>📝 Cuenta de la Mesa</h2>
+        <input type="text" id="nombre-cliente" placeholder="Nombre / Mesa (Ej. Mesa 3)" style="padding: 10px; width: 95%; margin-bottom: 15px; border-radius:5px; border:none;">
+        <div id="lista-carrito" style="flex-grow: 1; overflow-y: auto;"></div>
+        <h2 style="text-align: right; color: #8bc34a;">Total: $<span id="total-cuenta">0.00</span></h2>
+        <button class="btn-enviar" onclick="enviarPedido()">🚀 MANDAR PEDIDO</button>
+    </div>
+
+    <script>
+        let menu = {};
+        let carrito = [];
+        const claveSeguridad = "IBARRITA";
+
+        // CONEXIÓN AL SERVIDOR PARA DESCARGAR PRECIOS ACTUALIZADOS
+        fetch('/api/menu')
+            .then(res => res.json())
+            .then(datos => {
+                menu = datos;
+                const nav = document.getElementById('nav-categorias');
+                nav.innerHTML = ''; // Limpiar letrero de carga
+                for (let cat in menu) {
+                    let btn = document.createElement('button');
+                    btn.className = 'btn-categoria';
+                    btn.innerText = cat;
+                    btn.onclick = () => cargarProductos(cat);
+                    nav.appendChild(btn);
+                }
+            });
+
+        function cargarProductos(categoria) {
+            document.getElementById('titulo-categoria').innerText = categoria;
+            const grid = document.getElementById('grid-productos');
+            grid.innerHTML = '';
+            menu[categoria].forEach(prod => {
+                let btn = document.createElement('button');
+                btn.className = 'btn-producto';
+                btn.innerHTML = `${prod.nombre} <span class="precio-badge">$${prod.precio}</span>`;
+                btn.onclick = () => agregarAlCarrito(prod);
+                grid.appendChild(btn);
+            });
+        }
+
+        function agregarAlCarrito(producto) {
+            let item = carrito.find(i => i.nombre === producto.nombre);
+            if (item) { item.cantidad++; item.subtotal += producto.precio; } 
+            else { carrito.push({ nombre: producto.nombre, precio: producto.precio, cantidad: 1, subtotal: producto.precio }); }
+            actualizarCarrito();
+        }
+
+        function actualizarCarrito() {
+            let html = '';
+            let total = 0;
+            carrito.forEach((item, index) => {
+                total += item.subtotal;
+                html += `<div class="item-carrito">
+                    <span>${item.cantidad}x ${item.nombre}</span>
+                    <span>$${item.subtotal} <button class="btn-quitar" onclick="quitarItem(${index})">X</button></span>
+                </div>`;
+            });
+            document.getElementById('lista-carrito').innerHTML = html;
+            document.getElementById('total-cuenta').innerText = total.toFixed(2);
+        }
+
+        function quitarItem(index) { 
+            let pass = prompt("Atención: Ingrese clave de autorización para borrar productos:");
+            if (pass === claveSeguridad) {
+                carrito.splice(index, 1); 
+                actualizarCarrito(); 
+            } else { alert("Clave incorrecta. Acción denegada."); }
+        }
+
+        function enviarPedido() {
+            let cliente = document.getElementById('nombre-cliente').value;
+            if (!cliente) return alert("Ingresa el Nombre o la Mesa");
+            if (carrito.length === 0) return alert("Agrega productos al pedido");
+            let total = carrito.reduce((sum, item) => sum + item.subtotal, 0);
+            
+            fetch('/api/pedidos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cliente: cliente, items: carrito, total: total, estado: 'Pendiente', fecha: new Date().toLocaleString() })
+            }).then(() => {
+                alert("¡Pedido enviado a caja/cocina!");
+                carrito = [];
+                document.getElementById('nombre-cliente').value = '';
+                actualizarCarrito();
+            });
+        }
+    </script>
+</body>
+</html>

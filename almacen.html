@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Almacén - La Queen</title>
+    <style>
+        body { font-family: monospace; background: #121216; color: #fff; padding: 20px; }
+        h1 { color: #ff9800; text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .tabla-almacen { width: 100%; max-width: 900px; margin: 0 auto; border-collapse: collapse; }
+        .tabla-almacen th, .tabla-almacen td { border: 1px solid #444; padding: 12px; text-align: left; }
+        .tabla-almacen th { background: #333; color: #8bc34a; }
+        .stock-bajo { color: #f44336; font-weight: bold; }
+        .stock-ok { color: #8bc34a; font-weight: bold; }
+        .btn-agregar { background: #3f51b5; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right:5px;}
+        .btn-restar { background: #f44336; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .nav { text-align: center; margin-bottom: 20px; }
+        .nav a { color: #fff; text-decoration: none; padding: 10px 20px; background: #222; border: 1px solid #555; border-radius: 5px; margin: 0 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="nav">
+        <a href="comandero.html" target="_blank">📱 Comandero</a>
+        <a href="administracion.html" target="_blank">⚙️ Caja</a>
+    </div>
+
+    <h1>📦 Control de Inventario - La Queen</h1>
+    
+    <table class="tabla-almacen">
+        <thead>
+            <tr>
+                <th>Producto (Torta / Bebida)</th>
+                <th>Stock Actual</th>
+                <th>Acciones Rápidas</th>
+            </tr>
+        </thead>
+        <tbody id="cuerpo-almacen">
+            <tr><td colspan="3" style="text-align:center;">Cargando inventario...</td></tr>
+        </tbody>
+    </table>
+
+    <script>
+        const claveSeguridad = "IBARRITA"; // CLAVE MAESTRA
+
+        function cargarAlmacen() {
+            fetch('/api/inventario')
+                .then(res => res.json())
+                .then(datos => {
+                    let html = '';
+                    let productos = Object.keys(datos).sort();
+                    
+                    productos.forEach(nombre => {
+                        let stock = datos[nombre];
+                        let claseStock = stock <= 5 ? 'stock-bajo' : 'stock-ok';
+                        html += `
+                            <tr>
+                                <td>${nombre}</td>
+                                <td class="${claseStock}">${stock} unidades</td>
+                                <td>
+                                    <button class="btn-agregar" onclick="modificarStock('${nombre}', 'sumar')">➕ Agregar</button>
+                                    <button class="btn-restar" onclick="modificarStock('${nombre}', 'restar')">➖ Restar (Merma)</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    document.getElementById('cuerpo-almacen').innerHTML = html;
+                });
+        }
+
+        function modificarStock(nombre, operacion) {
+            // Protección si es para restar
+            if (operacion === 'restar') {
+                let pass = prompt("Atención: Clave de autorización para restar inventario (Merma):");
+                if (pass !== claveSeguridad) return alert("Clave incorrecta. Acción denegada.");
+            }
+
+            let cantidad = prompt(`¿Cuántas unidades deseas ${operacion} a "${nombre}"? (Ej. 2, 45, 100)`);
+            if (cantidad && !isNaN(cantidad) && parseInt(cantidad) > 0) {
+                fetch('/api/inventario/modificar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre: nombre, cantidad: cantidad, operacion: operacion })
+                }).then(() => cargarAlmacen());
+            } else if (cantidad !== null) {
+                alert("Por favor, ingresa un número válido.");
+            }
+        }
+        cargarAlmacen();
+    </script>
+</body>
+</html>

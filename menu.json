@@ -1,0 +1,204 @@
+{
+  "Sencillas": [
+    {
+      "nombre": "Torta de Milanesa",
+      "precio": 75
+    },
+    {
+      "nombre": "Torta de Pierna",
+      "precio": 75
+    },
+    {
+      "nombre": "Torta de Salchicha",
+      "precio": 75
+    },
+    {
+      "nombre": "Torta de Jamón",
+      "precio": 75
+    },
+    {
+      "nombre": "Torta de Huevo",
+      "precio": 75
+    },
+    {
+      "nombre": "Torta de Chuleta",
+      "precio": 75
+    },
+    {
+      "nombre": "Torta de Q. Puerco",
+      "precio": 75
+    }
+  ],
+  "Combinadas": [
+    {
+      "nombre": "Trailera",
+      "precio": 80
+    },
+    {
+      "nombre": "Toluqueña",
+      "precio": 80
+    },
+    {
+      "nombre": "Italiana",
+      "precio": 80
+    },
+    {
+      "nombre": "Suiza",
+      "precio": 80
+    },
+    {
+      "nombre": "Michoacana",
+      "precio": 80
+    },
+    {
+      "nombre": "Poblana",
+      "precio": 80
+    },
+    {
+      "nombre": "Lambada",
+      "precio": 80
+    },
+    {
+      "nombre": "Holandesa",
+      "precio": 80
+    },
+    {
+      "nombre": "Rusa",
+      "precio": 80
+    },
+    {
+      "nombre": "Brasileña",
+      "precio": 80
+    },
+    {
+      "nombre": "Francesa",
+      "precio": 80
+    },
+    {
+      "nombre": "Alejandra",
+      "precio": 80
+    },
+    {
+      "nombre": "Hawaiana",
+      "precio": 80
+    },
+    {
+      "nombre": "Oaxaqueña",
+      "precio": 80
+    }
+  ],
+  "Clásicas": [
+    {
+      "nombre": "Verónica",
+      "precio": 80
+    },
+    {
+      "nombre": "Tatiana",
+      "precio": 80
+    },
+    {
+      "nombre": "Mexiquense",
+      "precio": 80
+    },
+    {
+      "nombre": "Alemana",
+      "precio": 80
+    },
+    {
+      "nombre": "Texana",
+      "precio": 80
+    },
+    {
+      "nombre": "Pachuqueña",
+      "precio": 80
+    },
+    {
+      "nombre": "Española",
+      "precio": 80
+    },
+    {
+      "nombre": "Argentina",
+      "precio": 80
+    },
+    {
+      "nombre": "Tabasqueña",
+      "precio": 80
+    },
+    {
+      "nombre": "Jarocha",
+      "precio": 80
+    },
+    {
+      "nombre": "Veracruzana",
+      "precio": 80
+    }
+  ],
+  "Especiales": [
+    {
+      "nombre": "Especial",
+      "precio": 85
+    },
+    {
+      "nombre": "Diabla",
+      "precio": 85
+    },
+    {
+      "nombre": "Manterola",
+      "precio": 85
+    },
+    {
+      "nombre": "Pecaminosa",
+      "precio": 85
+    }
+  ],
+  "El Tamaño Importa": [
+    {
+      "nombre": "Insaciable",
+      "precio": 90
+    },
+    {
+      "nombre": "Vanidosa",
+      "precio": 90
+    },
+    {
+      "nombre": "Caprichosa",
+      "precio": 90
+    },
+    {
+      "nombre": "Niña Pobre",
+      "precio": 90
+    },
+    {
+      "nombre": "Bomba",
+      "precio": 90
+    },
+    {
+      "nombre": "Suspiro de Monja",
+      "precio": 90
+    }
+  ],
+  "La Cubana": [
+    {
+      "nombre": "Torta Cubana",
+      "precio": 135
+    }
+  ],
+  "Bebidas": [
+    {
+      "nombre": "Coca Cola",
+      "precio": 25
+    },
+    {
+      "nombre": "Refrescos Varios",
+      "precio": 25
+    },
+    {
+      "nombre": "Agua Embotellada (Simple)",
+      "precio": 20
+    },
+    {
+      "nombre": "Agua Embotellada (Sabores)",
+      "precio": 25
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+[
+  {
+    "cliente": "1",
+    "items": [
+      {
+        "nombre": "Pecaminosa",
+        "precio": 85,
+        "cantidad": 1,
+        "subtotal": 85
+      },
+      {
+        "nombre": "Diabla",
+        "precio": 85,
+        "cantidad": 1,
+        "subtotal": 85
+      },
+      {
+        "nombre": "Insaciable",
+        "precio": 90,
+        "cantidad": 1,
+        "subtotal": 90
+      },
+      {
+        "nombre": "Caprichosa",
+        "precio": 90,
+        "cantidad": 1,
+        "subtotal": 90
+      },
+      {
+        "nombre": "Vanidosa",
+        "precio": 90,
+        "cantidad": 1,
+        "subtotal": 90
+      },
+      {
+        "nombre": "Italiana",
+        "precio": 80,
+        "cantidad": 1,
+        "subtotal": 80
+      },
+      {
+        "nombre": "Holandesa",
+        "precio": 80,
+        "cantidad": 1,
+        "subtotal": 80
+      },
+      {
+        "nombre": "Lambada",
+        "precio": 80,
+        "cantidad": 1,
+        "subtotal": 80
+      }
+    ],
+    "total": 595,
+    "estado": "Cobrado",
+    "fecha": "23/7/2026, 23:27:05",
+    "id": "1784867226046",
+    "motivo": "Desc. $85: porque si ",
+    "metodo": "Tarjeta"
+  },
+  {
+    "cliente": "1",
+    "items": [
+      {
+        "nombre": "Italiana",
+        "precio": 80,
+        "cantidad": 1,
+        "subtotal": 80
+      },
+      {
+        "nombre": "Suiza",
+        "precio": 80,
+        "cantidad": 1,
+        "subtotal": 80
+      }
+    ],
+    "total": 0,
+    "estado": "Cobrado",
+    "fecha": "23/7/2026, 23:34:35",
+    "id": "1784867675719",
+    "metodo": "Tarjeta"
+  },
+  {
+    "cliente": "1",
+    "items": [
+      {
+        "nombre": "Michoacana",
+        "precio": 80,
+        "cantidad": 1,
+        "subtotal": 80
+      },
+      {
+        "nombre": "Rusa",
+        "precio": 80,
+        "cantidad": 1,
+        "subtotal": 80
+      }
+    ],
+    "total": 160,
+    "estado": "Cobrado",
+    "fecha": "23/7/2026, 23:34:46",
+    "id": "1784867686763",
+    "metodo": "Efectivo"
+  },
+  {
+    "cliente": "3",
+    "items": [
+      {
+        "nombre": "Refrescos Varios",
+        "precio": 25,
+        "cantidad": 3,
+        "subtotal": 75
+      },
+      {
+        "nombre": "Agua Embotellada (Sabores)",
+        "precio": 25,
+        "cantidad": 1,
+        "subtotal": 25
+      },
+      {
+        "nombre": "Coca Cola",
+        "precio": 25,
+        "cantidad": 1,
+        "subtotal": 25
+      },
+      {
+        "nombre": "Manterola",
+        "precio": 85,
+        "cantidad": 1,
+        "subtotal": 85
+      },
+      {
+        "nombre": "Diabla",
+        "precio": 85,
+        "cantidad": 1,
+        "subtotal": 85
+      }
+    ],
+    "total": 295,
+    "estado": "Cobrado",
+    "fecha": "23/7/2026, 23:37:09",
+    "id": "1784867829200",
+    "metodo": "Efectivo"
+  }
+]

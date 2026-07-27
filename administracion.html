@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caja Maestro - La Queen</title>
+    <style>
+        body { background-color: #121216; color: #f5f5f7; font-family: monospace; margin: 0; padding: 15px; }
+        .barra-nav { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; background: #1e1e24; padding: 10px; border-radius: 8px; border: 1px solid #333; }
+        .btn-nav { background: #333; color: #fff; padding: 10px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; cursor: pointer; border: 1px solid #555;}
+        .btn-historial { background: #9c27b0; color: #fff; border: none; }
+        .btn-almacen { background: #00bcd4; color: #111; border: none; }
+        .btn-precios { background: #ff5722; color: #fff; border: none; }
+        .columna { background: #18181f; padding: 15px; border-radius: 10px; border: 1px solid #2a2a35; max-width: 600px; margin: 0 auto; }
+        .titulo-columna { text-align: center; color: #ffb74d; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .tarjeta-pedido { background: #222; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 5px solid #8bc34a; }
+        .tarjeta-pedido.cancelado { border-left-color: #f44336; opacity: 0.7; }
+        .tarjeta-pedido.cobrado { border-left-color: #9c27b0; opacity: 0.8; }
+        .grid-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
+        .btn-act { padding: 10px; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; }
+        .btn-pagado { background: #8bc34a; color: #111; }
+        .btn-tarjeta { background: #3f51b5; color: #fff; }
+        .btn-cortesia { background: #03a9f4; color: #fff; }
+        .btn-descuento { background: #e91e63; color: #fff; }
+        .btn-cancelar { background: #f44336; color: #fff; grid-column: span 2; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: flex-start; padding-top: 50px; }
+        .modal-content { background: #2a2a35; padding: 20px; border-radius: 10px; width: 90%; max-width: 600px; border: 1px solid #ff9800; }
+        .btn-modal { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 48%; margin-top: 10px; }
+        .btn-ok { background: #8bc34a; color: #111; }
+        .btn-cancel { background: #f44336; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="barra-nav">
+        <a href="comandero.html" target="_blank" class="btn-nav">📱 Comandero</a>
+        <a href="almacen.html" target="_blank" class="btn-nav btn-almacen">📦 Ver Almacén</a>
+        <button onclick="document.getElementById('modal-historial').style.display='flex';" class="btn-nav btn-historial">🗃️ Ver Registro Cobradas</button>
+        <button onclick="abrirModalPrecios()" class="btn-nav btn-precios">✏️ Modificar Precios</button>
+    </div>
+
+    <div class="columna">
+        <h2 class="titulo-columna">📝 Caja Principal (Pedidos Activos)</h2>
+        <div id="bandeja-caja">Cargando...</div>
+    </div>
+
+    <div id="modal-historial" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color:#ff9800; text-align:center;">🗃️ Registro General</h3>
+            <div id="total-ventas-historial" style="background: #111; color: #8bc34a; font-size: 1.5rem; text-align: center; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #8bc34a;">
+                Total Vendido: $0.00
+            </div>
+            <div id="bandeja-historial" style="max-height: 50vh; overflow-y: auto;"></div>
+            <button class="btn-modal btn-cancel" style="width: 100%;" onclick="document.getElementById('modal-historial').style.display='none'">Cerrar Registro</button>
+        </div>
+    </div>
+
+    <div id="modal-precios" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color:#ff9800; text-align:center;">✏️ Modificar Precios del Menú</h3>
+            <select id="select-cat" onchange="cargarProdsPrecio()" style="width:100%; padding:10px; background:#111; color:white; margin-bottom:10px; border-radius:5px;">
+                <option value="">-- Selecciona Categoría --</option>
+            </select>
+            <select id="select-prod" style="width:100%; padding:10px; background:#111; color:white; margin-bottom:10px; border-radius:5px;">
+                <option value="">-- Selecciona Producto --</option>
+            </select>
+            <input type="number" id="nuevo-precio" placeholder="Nuevo precio ($)" style="width:100%; padding:10px; background:#111; color:white; border-radius:5px; border:1px solid #444;">
+            
+            <div style="display: flex; justify-content: space-between; margin-top:15px;">
+                <button class="btn-modal btn-cancel" onclick="document.getElementById('modal-precios').style.display='none'">Cancelar</button>
+                <button class="btn-modal btn-ok" onclick="guardarPrecio()">Guardar Nuevo Precio</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-accion" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="titulo-accion" style="color:#ff9800;">Acción</h3>
+            <div id="cuerpo-accion"></div>
+            <div style="display: flex; justify-content: space-between;">
+                <button class="btn-modal btn-cancel" onclick="document.getElementById('modal-accion').style.display='none'">Cancelar</button>
+                <button class="btn-modal btn-ok" id="btn-confirmar-accion">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const claveSeguridad = "IBARRITA"; 
+        let pedidosLocales = [];
+        let idSeleccionado = null;
+        let menuGlobal = {};
+
+        // --- SISTEMA DE PRECIOS DINÁMICOS ---
+        function abrirModalPrecios() {
+            let pass = prompt("Atención: Ingrese clave maestra para modificar precios del sistema:");
+            if (pass !== claveSeguridad) return alert("Clave incorrecta. Acción denegada.");
+
+            fetch('/api/menu').then(r => r.json()).then(data => {
+                menuGlobal = data;
+                let selectCat = document.getElementById('select-cat');
+                selectCat.innerHTML = '<option value="">-- Selecciona Categoría --</option>';
+                for(let cat in data) { selectCat.innerHTML += `<option value="${cat}">${cat}</option>`; }
+                document.getElementById('select-prod').innerHTML = '<option value="">-- Selecciona Producto --</option>';
+                document.getElementById('nuevo-precio').value = '';
+                document.getElementById('modal-precios').style.display = 'flex';
+            });
+        }
+
+        function cargarProdsPrecio() {
+            let cat = document.getElementById('select-cat').value;
+            let selectProd = document.getElementById('select-prod');
+            selectProd.innerHTML = '<option value="">-- Selecciona Producto --</option>';
+            if(cat && menuGlobal[cat]) {
+                menuGlobal[cat].forEach(p => {
+                    selectProd.innerHTML += `<option value="${p.nombre}">${p.nombre} (Actual: $${p.precio})</option>`;
+                });
+            }
+        }
+
+        function guardarPrecio() {
+            let cat = document.getElementById('select-cat').value;
+            let prod = document.getElementById('select-prod').value;
+            let precio = document.getElementById('nuevo-precio').value;
+            if(!cat || !prod || !precio) return alert("Llena todos los campos.");
+            
+            fetch('/api/menu/precio', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ categoria: cat, nombre: prod, nuevoPrecio: precio })
+            }).then(() => {
+                alert("✅ Precio actualizado correctamente en el servidor. El comandero se actualizará automáticamente.");
+                document.getElementById('modal-precios').style.display = 'none';
+            });
+        }
+
+        // --- SISTEMA DE CAJA ORIGINAL ---
+        function renderAdmin() {
+            fetch('/api/pedidos')
+                .then(r => r.json())
+                .then(pedidos => {
+                    pedidosLocales = pedidos;
+                    let htmlCaja = "";
+                    let htmlHistorial = "";
+                    let totalVentasCobradas = 0; 
+
+                    pedidos.slice().reverse().forEach(p => {
+                        if (!p.id) return; 
+                        let estadoClase = p.estado === 'Cancelado' ? 'cancelado' : p.estado === 'Cobrado' ? 'cobrado' : '';
+                        let productosTexto = p.items.map(i => `<div>${i.cantidad}x ${i.nombre} ($${i.subtotal})</div>`).join('');
+                        let infoExtra = "";
+                        
+                        if (p.estado === 'Cobrado') {
+                            infoExtra = `<div style="color:#8bc34a; font-weight:bold; margin-top:5px;">✅ Pagado en ${p.metodo}</div>`;
+                            totalVentasCobradas += parseFloat(p.total); 
+                        } else if (p.estado === 'Cancelado') {
+                            infoExtra = `<div style="color:#f44336; font-weight:bold; margin-top:5px;">❌ ${p.motivo}</div>`;
+                        }
+
+                        let botones = "";
+                        if (p.estado !== 'Cobrado' && p.estado !== 'Cancelado') {
+                            botones = `
+                            <div class="grid-botones">
+                                <button class="btn-act btn-pagado" onclick="cobrar('${p.id}', 'Efectivo')">💵 EFECTIVO</button>
+                                <button class="btn-act btn-tarjeta" onclick="cobrar('${p.id}', 'Tarjeta')">💳 TARJETA</button>
+                                <button class="btn-act btn-cortesia" onclick="accion('${p.id}', 'Cortesía')">🎁 Cortesía</button>
+                                <button class="btn-act btn-descuento" onclick="accion('${p.id}', 'Descuento')">🏷️ Descuento</button>
+                                <button class="btn-act btn-cancelar" onclick="accion('${p.id}', 'Cancelado')">❌ Cancelar</button>
+                            </div>`;
+                        }
+
+                        let tarjetaHTML = `
+                            <div class="tarjeta-pedido ${estadoClase}">
+                                <div><strong>${p.cliente}</strong> <span style="font-size:0.8rem; color:#aaa;">(${p.fecha || 'Sin fecha'})</span></div>
+                                <hr style="border-color:#333; margin:8px 0;">
+                                ${productosTexto}
+                                <hr style="border-color:#333; margin:8px 0;">
+                                <div style="font-size: 1.2rem; color:#ff9800;"><strong>Total: $${parseFloat(p.total).toFixed(2)}</strong></div>
+                                ${infoExtra} ${botones}
+                            </div>`;
+
+                        if (p.estado === 'Cobrado' || p.estado === 'Cancelado') htmlHistorial += tarjetaHTML; 
+                        else htmlCaja += tarjetaHTML;
+                    });
+                    document.getElementById('bandeja-caja').innerHTML = htmlCaja || '<p style="color:#666; text-align:center;">Sin pedidos activos</p>';
+                    document.getElementById('bandeja-historial').innerHTML = htmlHistorial || '<p style="color:#666; text-align:center;">Sin registro</p>';
+                    document.getElementById('total-ventas-historial').innerText = `Suma Total de Ventas: $${totalVentasCobradas.toFixed(2)}`;
+                });
+        }
+
+        window.cobrar = function(id, metodo) {
+            idSeleccionado = id;
+            let divCuerpo = document.getElementById('cuerpo-accion');
+            document.getElementById('titulo-accion').innerText = `Cobro con ${metodo}`;
+            divCuerpo.innerHTML = `<p>¿Confirmas pago por <b>${metodo}</b>? Se descontarán del almacén automáticamente.</p>`;
+            document.getElementById('btn-confirmar-accion').onclick = () => ejecutar({ estado: 'Cobrado', metodo: metodo });
+            document.getElementById('modal-accion').style.display = 'flex';
+        };
+
+        window.accion = function(id, tipo) {
+            idSeleccionado = id;
+            let div = document.getElementById('cuerpo-accion');
+            document.getElementById('titulo-accion').innerText = `Aplicar ${tipo}`;
+
+            if (tipo === 'Cortesía') {
+                div.innerHTML = `<p>¿Hacer cuenta gratis ($0.00)?</p>`;
+                document.getElementById('btn-confirmar-accion').onclick = () => ejecutar({ estado: 'Cortesía', total: 0 });
+            } else if (tipo === 'Descuento') {
+                div.innerHTML = `<input type="number" id="inp-desc" placeholder="Monto a descontar" style="width:100%; padding:10px; background:#111; color:white; border-radius:5px;"><input type="text" id="inp-mot" placeholder="Motivo" style="width:100%; padding:10px; margin-top:5px; background:#111; color:white; border-radius:5px;">`;
+                document.getElementById('btn-confirmar-accion').onclick = () => {
+                    let ped = pedidosLocales.find(p => String(p.id) === String(idSeleccionado));
+                    let m = document.getElementById('inp-desc').value;
+                    let nuevoTotal = Math.max(0, ped.total - m);
+                    ejecutar({ estado: 'Descuento', total: nuevoTotal, motivo: `Desc. $${m}: ${document.getElementById('inp-mot').value}` });
+                };
+            } else if (tipo === 'Cancelado') {
+                let pass = prompt("Atención: Clave de administrador para cancelar la cuenta entera:");
+                if (pass !== claveSeguridad) return alert("Clave incorrecta. Acción denegada.");
+                div.innerHTML = `<input type="text" id="inp-mot" placeholder="Motivo de cancelación" style="width:100%; padding:10px; background:#111; color:white; border-radius:5px;">`;
+                document.getElementById('btn-confirmar-accion').onclick = () => ejecutar({ estado: 'Cancelado', motivo: document.getElementById('inp-mot').value });
+            }
+            document.getElementById('modal-accion').style.display = 'flex';
+        };
+
+        function ejecutar(datos) {
+            fetch('/api/pedidos/' + idSeleccionado, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) })
+            .then(() => { document.getElementById('modal-accion').style.display = 'none'; renderAdmin(); });
+        }
+        setInterval(renderAdmin, 3000);
+        renderAdmin();
+    </script>
+</body>
+</html>
