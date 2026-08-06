@@ -178,5 +178,27 @@ app.post('/api/inventario/modificar', async (req, res) => {
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
-
+// 🔥 RUTA PARA ACTUALIZAR PRECIOS DEL MENÚ
+app.post('/api/menu/precio', async (req, res) => {
+  try {
+    const { categoria, nombre, nuevoPrecio } = req.body;
+    const menuRef = db.collection('config').doc('menu_la_queen');
+    const doc = await menuRef.get();
+    
+    if (!doc.exists) return res.status(404).json({ error: 'Menú no encontrado' });
+    
+    let menu = doc.data();
+    if (menu[categoria]) {
+        let producto = menu[categoria].find(p => p.nombre === nombre);
+        if (producto) {
+            producto.precio = parseFloat(nuevoPrecio); // Actualizamos el valor real en Firebase
+        }
+    }
+    
+    await menuRef.set(menu);
+    res.json({ success: true });
+  } catch (e) { 
+    res.status(500).json({ error: e.message }); 
+  }
+});
 module.exports = app;

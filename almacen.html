@@ -11,10 +11,7 @@
     
     .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     
-    /* Barra de búsqueda para no perderse con tantas tortas */
     .search-bar { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; }
-    
-    /* Cuadrícula del inventario */
     .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
     
     .inv-card { background: #fafafa; border: 1px solid #e0e0e0; padding: 15px; border-radius: 8px; text-align: center; transition: 0.3s; }
@@ -22,9 +19,8 @@
     
     .item-name { font-size: 1.1em; font-weight: bold; margin-bottom: 10px; color: #333; }
     .item-stock { font-size: 1.8em; font-weight: bold; color: #2e7d32; margin-bottom: 15px; }
-    .item-stock.bajo { color: #d32f2f; } /* Rojo si hay menos de 5 */
+    .item-stock.bajo { color: #d32f2f; }
     
-    /* Controles de sumar/restar */
     .controls { display: flex; justify-content: center; align-items: center; gap: 5px; }
     .input-cant { width: 60px; padding: 8px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
     .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
@@ -33,7 +29,6 @@
     .btn-sub { background: #ff9800; }
     .btn-sub:hover { background: #e65100; }
 
-    /* Botón para volver */
     .nav-btn { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #333; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
     .nav-btn:hover { background: #555; }
   </style>
@@ -47,12 +42,13 @@
     <input type="text" id="buscador" class="search-bar" placeholder="Buscar producto o torta (ej. Cubana, Coca Cola...)" onkeyup="filtrarInventario()">
 
     <div id="inventoryContainer" class="inventory-grid">
-      <!-- Los productos se cargarán aquí desde el servidor -->
+      <!-- Los productos se cargarán aquí -->
     </div>
   </div>
 
   <script>
     let inventarioGlobal = {};
+    let primeraCarga = true;
 
     async function cargarInventario() {
       try {
@@ -61,43 +57,57 @@
         renderInventario();
       } catch (e) {
         console.error("Error al cargar inventario", e);
-        document.getElementById('inventoryContainer').innerHTML = '<p>Error de conexión con el servidor.</p>';
       }
     }
 
     function renderInventario() {
       const container = document.getElementById('inventoryContainer');
       const filtro = document.getElementById('buscador').value.toLowerCase();
-      container.innerHTML = '';
-
-      // Ordenar alfabéticamente para que sea más fácil de leer
       const items = Object.keys(inventarioGlobal).sort();
 
-      items.forEach(nombre => {
-        // Filtro de búsqueda
-        if (nombre.toLowerCase().includes(filtro)) {
-          const stock = inventarioGlobal[nombre];
+      // Si es la primera vez, construimos todos los cuadros de HTML
+      if (primeraCarga) {
+        container.innerHTML = '';
+        items.forEach(nombre => {
           const div = document.createElement('div');
           div.className = 'inv-card';
+          // Creamos un ID seguro sin espacios para evitar errores de JS
+          const idNombre = nombre.replace(/[^a-zA-Z0-9]/g, '_'); 
           
-          const claseStock = stock <= 5 ? 'item-stock bajo' : 'item-stock';
-
           div.innerHTML = `
             <div class="item-name">${nombre}</div>
-            <div class="${claseStock}">${stock} pts</div>
+            <div id="stock_${idNombre}" class="item-stock ${inventarioGlobal[nombre] <= 5 ? 'bajo' : ''}">${inventarioGlobal[nombre]} pts</div>
             <div class="controls">
-              <input type="number" id="input_${nombre}" class="input-cant" value="1" min="1">
-              <button class="btn btn-add" onclick="modificarStock('${nombre}', 'sumar')">➕</button>
-              <button class="btn btn-sub" onclick="modificarStock('${nombre}', 'restar')">➖</button>
+              <input type="number" id="input_${idNombre}" class="input-cant" value="1" min="1">
+              <button class="btn btn-add" onclick="modificarStock('${nombre}', '${idNombre}', 'sumar')">➕</button>
+              <button class="btn btn-sub" onclick="modificarStock('${nombre}', '${idNombre}', 'restar')">➖</button>
             </div>
           `;
           container.appendChild(div);
-        }
-      });
+        });
+        primeraCarga = false;
+      } else {
+        // En actualizaciones de segundo plano, SOLO cambiamos los números
+        items.forEach(nombre => {
+          const idNombre = nombre.replace(/[^a-zA-Z0-9]/g, '_'); 
+          const stockEl = document.getElementById('stock_' + idNombre);
+          if (stockEl) {
+            stockEl.innerText = inventarioGlobal[nombre] + ' pts';
+            stockEl.className = 'item-stock ' + (inventarioGlobal[nombre] <= 5 ? 'bajo' : '');
+          }
+        });
+      }
+
+      // Aplicar el filtro de búsqueda
+      const cards = container.getElementsByClassName('inv-card');
+      for (let card of cards) {
+        const name = card.querySelector('.item-name').innerText.toLowerCase();
+        card.style.display = name.includes(filtro) ? 'block' : 'none';
+      }
     }
 
-    async function modificarStock(nombre, operacion) {
-      const input = document.getElementById(`input_${nombre}`);
+    async function modificarStock(nombreReal, idNombre, operacion) {
+      const input = document.getElementById(`input_${idNombre}`);
       const cantidad = parseInt(input.value);
 
       if (isNaN(cantidad) || cantidad <= 0) {
@@ -109,14 +119,12 @@
         const res = await fetch('/api/inventario/modificar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre, cantidad, operacion })
+          body: JSON.stringify({ nombre: nombreReal, cantidad, operacion })
         });
 
         if (res.ok) {
-          // Recargar el inventario para ver los cambios reflejados al instante
-          cargarInventario();
-          // Regresar el input a 1
-          input.value = 1;
+          input.value = 1; 
+          cargarInventario(); // Forzar actualización visual al instante
         } else {
           alert("Error al actualizar el inventario.");
         }
@@ -129,8 +137,11 @@
       renderInventario();
     }
 
-    // Cargar los datos al abrir la página
+    // Arrancamos el inventario
     cargarInventario();
+    
+    // 🔥 La Magia: Actualiza la pantalla cada 4 segundos
+    setInterval(cargarInventario, 4000); 
   </script>
 </body>
 </html>

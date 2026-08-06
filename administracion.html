@@ -118,15 +118,16 @@
         function guardarPrecio() {
             let cat = document.getElementById('select-cat').value;
             let prod = document.getElementById('select-prod').value;
-            let precio = document.getElementById('nuevo-precio').value;
-            if(!cat || !prod || !precio) return alert("Llena todos los campos.");
+            let precio = parseFloat(document.getElementById('nuevo-precio').value);
+            
+            if(!cat || !prod || isNaN(precio)) return alert("Por favor ingresa un número válido para el precio.");
             
             fetch('/api/menu/precio', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ categoria: cat, nombre: prod, nuevoPrecio: precio })
             }).then(() => {
-                alert("✅ Precio actualizado correctamente en el servidor. El comandero se actualizará automáticamente.");
+                alert("✅ Precio actualizado correctamente.\n\n⚠️ IMPORTANTE: Si tienes el 'Comandero' abierto en otra pestaña o tablet, actualiza esa página para que descargue los precios nuevos.");
                 document.getElementById('modal-precios').style.display = 'none';
             });
         }
@@ -143,7 +144,7 @@
                     pedidos.slice().reverse().forEach(p => {
                         if (!p.id) return; 
                         let estadoClase = p.estado === 'Cancelado' ? 'cancelado' : p.estado === 'Cobrado' ? 'cobrado' : '';
-                        let productosTexto = p.items.map(i => `<div>${i.cantidad}x ${i.nombre} ($${i.subtotal})</div>`).join('');
+                        let productosTexto = p.items.map(i => `<div>${i.cantidad}x ${i.nombre} ($${i.subtotal || (i.cantidad * i.precio)})</div>`).join('');
                         let infoExtra = "";
                         
                         if (p.estado === 'Cobrado') {
