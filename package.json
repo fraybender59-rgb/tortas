@@ -2,10 +2,8 @@
   "name": "tortas-queen",
   "version": "1.0.0",
   "main": "app.js",
-  "scripts": {
-    "start": "node app.js"
-  },
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^4.18.2",
+    "firebase-admin": "^12.0.0"
   }
 }
