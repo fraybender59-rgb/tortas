@@ -55,7 +55,6 @@ for (let categoria in menuBase) {
     menuBase[categoria].forEach(item => inventarioBase[item.nombre] = 20);
 }
 
-// Inicializador con captura de errores
 function inicializarArchivos() {
     try {
         if (!fs.existsSync(pedidosFile)) fs.writeFileSync(pedidosFile, '[]');
@@ -147,7 +146,6 @@ app.post('/api/inventario/modificar', (req, res) => {
     res.json({ success: true });
 });
 
-// Inicio de servidor local si no corre como serverless en Vercel
 const PORT = process.env.PORT || 3000;
 if (!process.env.VERCEL) {
     app.listen(PORT, () => console.log(`🚀 Servidor activo en puerto ${PORT}`));

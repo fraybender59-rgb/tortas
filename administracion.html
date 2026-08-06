@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caja Maestro - La Queen</title>
+    <title>Caja Maestro - Tortas Queen</title>
     <style>
         body { background-color: #121216; color: #f5f5f7; font-family: monospace; margin: 0; padding: 15px; }
         .barra-nav { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; background: #1e1e24; padding: 10px; border-radius: 8px; border: 1px solid #333; }
@@ -89,7 +89,6 @@
         let idSeleccionado = null;
         let menuGlobal = {};
 
-        // --- SISTEMA DE PRECIOS DINÁMICOS ---
         function abrirModalPrecios() {
             let pass = prompt("Atención: Ingrese clave maestra para modificar precios del sistema:");
             if (pass !== claveSeguridad) return alert("Clave incorrecta. Acción denegada.");
@@ -132,7 +131,6 @@
             });
         }
 
-        // --- SISTEMA DE CAJA ORIGINAL ---
         function renderAdmin() {
             fetch('/api/pedidos')
                 .then(r => r.json())
