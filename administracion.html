@@ -11,6 +11,9 @@
         .btn-historial { background: #9c27b0; color: #fff; border: none; }
         .btn-almacen { background: #00bcd4; color: #111; border: none; }
         .btn-precios { background: #ff5722; color: #fff; border: none; }
+        .btn-tarjeta-conf { background: #3f51b5; color: #fff; border: none; }
+        .btn-comprobantes { background: #4caf50; color: #fff; border: none; }
+        
         .columna { background: #18181f; padding: 15px; border-radius: 10px; border: 1px solid #2a2a35; max-width: 600px; margin: 0 auto; }
         .titulo-columna { text-align: center; color: #ffb74d; border-bottom: 2px solid #333; padding-bottom: 10px; }
         .tarjeta-pedido { background: #222; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 5px solid #8bc34a; }
@@ -23,19 +26,27 @@
         .btn-cortesia { background: #03a9f4; color: #fff; }
         .btn-descuento { background: #e91e63; color: #fff; }
         .btn-cancelar { background: #f44336; color: #fff; grid-column: span 2; }
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: flex-start; padding-top: 50px; }
-        .modal-content { background: #2a2a35; padding: 20px; border-radius: 10px; width: 90%; max-width: 600px; border: 1px solid #ff9800; }
+        
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: flex-start; padding-top: 50px; overflow-y: auto; }
+        .modal-content { background: #2a2a35; padding: 20px; border-radius: 10px; width: 90%; max-width: 600px; border: 1px solid #ff9800; margin-bottom: 50px; }
         .btn-modal { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 48%; margin-top: 10px; }
         .btn-ok { background: #8bc34a; color: #111; }
         .btn-cancel { background: #f44336; color: #fff; }
+
+        /* Estilos para galería de comprobantes */
+        .galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; max-height: 40vh; overflow-y: auto; background: #111; padding: 10px; border-radius: 5px; border: 1px solid #444; margin-top: 15px; }
+        .galeria img { width: 100%; height: 120px; object-fit: cover; border-radius: 5px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+        .galeria img:hover { border-color: #8bc34a; transform: scale(1.05); }
     </style>
 </head>
 <body>
     <div class="barra-nav">
         <a href="comandero.html" target="_blank" class="btn-nav">📱 Comandero</a>
         <a href="almacen.html" target="_blank" class="btn-nav btn-almacen">📦 Ver Almacén</a>
-        <button onclick="document.getElementById('modal-historial').style.display='flex';" class="btn-nav btn-historial">🗃️ Ver Registro Cobradas</button>
-        <button onclick="abrirModalPrecios()" class="btn-nav btn-precios">✏️ Modificar Precios</button>
+        <button onclick="document.getElementById('modal-historial').style.display='flex';" class="btn-nav btn-historial">🗃️ Ver Registro</button>
+        <button onclick="abrirModalPrecios()" class="btn-nav btn-precios">✏️ Precios</button>
+        <button onclick="abrirModalTarjeta()" class="btn-nav btn-tarjeta-conf">💳 Config Tarjeta</button>
+        <button onclick="abrirModalComprobantes()" class="btn-nav btn-comprobantes">📸 Transferencias</button>
     </div>
 
     <div class="columna">
@@ -43,6 +54,7 @@
         <div id="bandeja-caja">Cargando...</div>
     </div>
 
+    <!-- MODAL HISTORIAL -->
     <div id="modal-historial" class="modal-overlay">
         <div class="modal-content">
             <h3 style="color:#ff9800; text-align:center;">🗃️ Registro General</h3>
@@ -54,6 +66,7 @@
         </div>
     </div>
 
+    <!-- MODAL PRECIOS -->
     <div id="modal-precios" class="modal-overlay">
         <div class="modal-content">
             <h3 style="color:#ff9800; text-align:center;">✏️ Modificar Precios del Menú</h3>
@@ -72,6 +85,48 @@
         </div>
     </div>
 
+    <!-- MODAL TARJETA BANCARIA -->
+    <div id="modal-tarjeta" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color:#3f51b5; text-align:center;">💳 Modificar Tarjeta para Clientes</h3>
+            <p style="color: #aaa; text-align: center; font-size: 0.9em;">Este número aparecerá en la página donde los clientes hacen su pedido.</p>
+            <input type="text" id="nueva-tarjeta" placeholder="1234 5678 9012 3456" maxlength="19" style="width:100%; padding:15px; background:#111; color:#fff; border-radius:5px; border:1px solid #444; font-size: 1.5rem; text-align: center; letter-spacing: 2px; margin-top: 10px;">
+            
+            <div style="display: flex; justify-content: space-between; margin-top:20px;">
+                <button class="btn-modal btn-cancel" onclick="document.getElementById('modal-tarjeta').style.display='none'">Cancelar</button>
+                <button class="btn-modal btn-ok" onclick="guardarTarjeta()">Guardar Tarjeta</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL COMPROBANTES DE TRANSFERENCIA -->
+    <div id="modal-comprobantes" class="modal-overlay">
+        <div class="modal-content" style="max-width: 800px;">
+            <h3 style="color:#4caf50; text-align:center;">📸 Comprobantes de Transferencia</h3>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px; align-items: stretch;">
+                <input type="date" id="fecha-comprobantes" style="padding:10px; background:#111; color:white; border:1px solid #444; border-radius:5px; flex-grow: 1; font-size: 1.1rem;" onchange="cargarComprobantes()">
+                
+                <input type="file" id="input-comprobante" accept="image/*" style="display:none;" onchange="subirComprobante()">
+                <button class="btn-modal btn-ok" style="margin-top:0; width: auto; background: #ff9800; color: #111;" onclick="document.getElementById('input-comprobante').click()">➕ Subir Foto</button>
+            </div>
+
+            <div id="galeria-comprobantes" class="galeria">
+                <!-- Las imágenes se cargarán aquí -->
+                <p style="color:#666; grid-column: 1 / -1; text-align: center;">Selecciona una fecha para ver los comprobantes.</p>
+            </div>
+
+            <button class="btn-modal btn-cancel" style="width: 100%; margin-top:20px;" onclick="document.getElementById('modal-comprobantes').style.display='none'">Cerrar Galería</button>
+        </div>
+    </div>
+
+    <!-- VISOR DE IMAGEN AMPLIADA -->
+    <div id="visor-imagen" class="modal-overlay" style="z-index: 2000; align-items: center;" onclick="this.style.display='none'">
+        <img id="imagen-ampliada" src="" style="max-width: 95%; max-height: 95%; border: 3px solid #8bc34a; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.8);">
+        <p style="position: absolute; bottom: 20px; color: white; background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 20px;">Toca cualquier parte para cerrar</p>
+    </div>
+
+    <!-- MODAL ACCIONES PEDIDO -->
     <div id="modal-accion" class="modal-overlay">
         <div class="modal-content">
             <h3 id="titulo-accion" style="color:#ff9800;">Acción</h3>
@@ -89,6 +144,116 @@
         let idSeleccionado = null;
         let menuGlobal = {};
 
+        /* ========================
+           LÓGICA DE TARJETA
+        ======================== */
+        function abrirModalTarjeta() {
+            let pass = prompt("Ingrese clave maestra para modificar el número de cuenta:");
+            if (pass !== claveSeguridad) return alert("Clave incorrecta. Acción denegada.");
+
+            fetch('/api/config/tarjeta').then(r => r.json()).then(data => {
+                document.getElementById('nueva-tarjeta').value = data.numero || '';
+                document.getElementById('modal-tarjeta').style.display = 'flex';
+            }).catch(e => console.error("Error al obtener tarjeta"));
+        }
+
+        function guardarTarjeta() {
+            let num = document.getElementById('nueva-tarjeta').value;
+            if(!num) return alert("Ingresa un número válido");
+
+            fetch('/api/config/tarjeta', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ numero: num })
+            }).then(() => {
+                alert("✅ Número de tarjeta actualizado para los clientes.");
+                document.getElementById('modal-tarjeta').style.display = 'none';
+            });
+        }
+
+        /* ========================
+           LÓGICA DE COMPROBANTES
+        ======================== */
+        function obtenerFechaDeHoy() {
+            const hoy = new Date();
+            // Formatear a YYYY-MM-DD
+            return hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
+        }
+
+        function abrirModalComprobantes() {
+            document.getElementById('fecha-comprobantes').value = obtenerFechaDeHoy();
+            cargarComprobantes();
+            document.getElementById('modal-comprobantes').style.display = 'flex';
+        }
+
+        function cargarComprobantes() {
+            const fecha = document.getElementById('fecha-comprobantes').value;
+            const galeria = document.getElementById('galeria-comprobantes');
+            galeria.innerHTML = '<p style="color:#666; grid-column: 1 / -1; text-align: center;">Cargando...</p>';
+
+            fetch(`/api/comprobantes?fecha=${fecha}`)
+                .then(r => r.json())
+                .then(data => {
+                    galeria.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        galeria.innerHTML = '<p style="color:#666; grid-column: 1 / -1; text-align: center;">No hay comprobantes para esta fecha.</p>';
+                        return;
+                    }
+                    data.forEach(imgBase64 => {
+                        const img = document.createElement('img');
+                        img.src = imgBase64;
+                        img.onclick = () => {
+                            document.getElementById('imagen-ampliada').src = imgBase64;
+                            document.getElementById('visor-imagen').style.display = 'flex';
+                        };
+                        galeria.appendChild(img);
+                    });
+                }).catch(e => {
+                    galeria.innerHTML = '<p style="color:#f44336; grid-column: 1 / -1; text-align: center;">Error al cargar.</p>';
+                });
+        }
+
+        function subirComprobante() {
+            const input = document.getElementById('input-comprobante');
+            const fecha = document.getElementById('fecha-comprobantes').value;
+            
+            if(!input.files || input.files.length === 0) return;
+            if(!fecha) return alert('Por favor, selecciona una fecha primero.');
+
+            const file = input.files[0];
+            const reader = new FileReader();
+
+            // Convertimos la imagen a código Base64 para guardarla fácilmente en la base de datos
+            reader.onload = function(e) {
+                const base64Image = e.target.result;
+                
+                // Mostrar texto de carga
+                document.getElementById('galeria-comprobantes').innerHTML = '<p style="color:#ff9800; grid-column: 1 / -1; text-align: center;">Subiendo imagen, espera...</p>';
+
+                fetch('/api/comprobantes', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ fecha: fecha, imagen: base64Image })
+                }).then(r => r.json()).then(res => {
+                    if(res.success) {
+                        cargarComprobantes(); // Recargar la galería
+                        input.value = ""; // Limpiar input
+                    } else {
+                        alert('Error al guardar la imagen en el servidor.');
+                        cargarComprobantes();
+                    }
+                }).catch(e => {
+                    alert('Fallo la conexión al subir la imagen.');
+                    cargarComprobantes();
+                });
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        /* ========================
+           LÓGICA ORIGINAL DE CAJA
+        ======================== */
         function abrirModalPrecios() {
             let pass = prompt("Atención: Ingrese clave maestra para modificar precios del sistema:");
             if (pass !== claveSeguridad) return alert("Clave incorrecta. Acción denegada.");

@@ -178,6 +178,7 @@ app.post('/api/inventario/modificar', async (req, res) => {
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
+
 // 🔥 RUTA PARA ACTUALIZAR PRECIOS DEL MENÚ
 app.post('/api/menu/precio', async (req, res) => {
   try {
@@ -201,4 +202,71 @@ app.post('/api/menu/precio', async (req, res) => {
     res.status(500).json({ error: e.message }); 
   }
 });
+
+
+// 👇=========================================👇
+// 🔥 NUEVAS RUTAS PARA LA TARJETA BANCARIA 🔥
+// 👇=========================================👇
+
+// Obtener el número de tarjeta actual
+app.get('/api/config/tarjeta', async (req, res) => {
+  try {
+    const doc = await db.collection('config').doc('tarjeta_la_queen').get();
+    if (!doc.exists) {
+      return res.json({ numero: "1234 5678 9012 3456" }); // Número por defecto si aún no guardas uno
+    }
+    res.json(doc.data());
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Guardar un nuevo número de tarjeta
+app.post('/api/config/tarjeta', async (req, res) => {
+  try {
+    const { numero } = req.body;
+    await db.collection('config').doc('tarjeta_la_queen').set({ numero });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// 👇=========================================👇
+// 🔥 NUEVAS RUTAS PARA COMPROBANTES DE PAGO 🔥
+// 👇=========================================👇
+
+// Obtener las fotos de una fecha específica
+app.get('/api/comprobantes', async (req, res) => {
+  try {
+    const { fecha } = req.query; // Esperamos un formato YYYY-MM-DD
+    if (!fecha) return res.status(400).json({ error: 'Falta la fecha' });
+
+    const snapshot = await db.collection('comprobantes')
+                             .where('fecha', '==', fecha)
+                             .get();
+
+    const fotos = [];
+    snapshot.forEach(doc => {
+      fotos.push(doc.data().imagen);
+    });
+
+    res.json(fotos);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Subir una nueva foto de transferencia
+app.post('/api/comprobantes', async (req, res) => {
+  try {
+    const { fecha, imagen } = req.body;
+    if (!fecha || !imagen) return res.status(400).json({ error: 'Faltan datos' });
+
+    // Guardamos la imagen en Base64 en una nueva colección llamada "comprobantes"
+    await db.collection('comprobantes').add({
+      fecha: fecha,
+      imagen: imagen,
+      creadoEn: new Date().toISOString()
+    });
+
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = app;
