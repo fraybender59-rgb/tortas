@@ -1,91 +1,136 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almacén - La Queen</title>
-    <style>
-        body { font-family: monospace; background: #121216; color: #fff; padding: 20px; }
-        h1 { color: #ff9800; text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
-        .tabla-almacen { width: 100%; max-width: 900px; margin: 0 auto; border-collapse: collapse; }
-        .tabla-almacen th, .tabla-almacen td { border: 1px solid #444; padding: 12px; text-align: left; }
-        .tabla-almacen th { background: #333; color: #8bc34a; }
-        .stock-bajo { color: #f44336; font-weight: bold; }
-        .stock-ok { color: #8bc34a; font-weight: bold; }
-        .btn-agregar { background: #3f51b5; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right:5px;}
-        .btn-restar { background: #f44336; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .nav { text-align: center; margin-bottom: 20px; }
-        .nav a { color: #fff; text-decoration: none; padding: 10px 20px; background: #222; border: 1px solid #555; border-radius: 5px; margin: 0 5px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Almacén / Inventario - La Queen 👑</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+    body { padding: 20px; background: #f4f4f9; color: #333; }
+    h1 { margin-bottom: 20px; text-align: center; color: #b71c1c; }
+    
+    .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    
+    /* Barra de búsqueda para no perderse con tantas tortas */
+    .search-bar { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; }
+    
+    /* Cuadrícula del inventario */
+    .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+    
+    .inv-card { background: #fafafa; border: 1px solid #e0e0e0; padding: 15px; border-radius: 8px; text-align: center; transition: 0.3s; }
+    .inv-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #b71c1c; }
+    
+    .item-name { font-size: 1.1em; font-weight: bold; margin-bottom: 10px; color: #333; }
+    .item-stock { font-size: 1.8em; font-weight: bold; color: #2e7d32; margin-bottom: 15px; }
+    .item-stock.bajo { color: #d32f2f; } /* Rojo si hay menos de 5 */
+    
+    /* Controles de sumar/restar */
+    .controls { display: flex; justify-content: center; align-items: center; gap: 5px; }
+    .input-cant { width: 60px; padding: 8px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
+    .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
+    .btn-add { background: #1976d2; }
+    .btn-add:hover { background: #1565c0; }
+    .btn-sub { background: #ff9800; }
+    .btn-sub:hover { background: #e65100; }
+
+    /* Botón para volver */
+    .nav-btn { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #333; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
+    .nav-btn:hover { background: #555; }
+  </style>
 </head>
 <body>
 
-    <div class="nav">
-        <a href="comandero.html" target="_blank">📱 Comandero</a>
-        <a href="administracion.html" target="_blank">⚙️ Caja</a>
-    </div>
-
-    <h1>📦 Control de Inventario - La Queen</h1>
+  <div class="container">
+    <a href="administracion.html" class="nav-btn">⬅ Volver a Administración</a>
+    <h1>📦 Control de Inventario</h1>
     
-    <table class="tabla-almacen">
-        <thead>
-            <tr>
-                <th>Producto (Torta / Bebida)</th>
-                <th>Stock Actual</th>
-                <th>Acciones Rápidas</th>
-            </tr>
-        </thead>
-        <tbody id="cuerpo-almacen">
-            <tr><td colspan="3" style="text-align:center;">Cargando inventario...</td></tr>
-        </tbody>
-    </table>
+    <input type="text" id="buscador" class="search-bar" placeholder="Buscar producto o torta (ej. Cubana, Coca Cola...)" onkeyup="filtrarInventario()">
 
-    <script>
-        const claveSeguridad = "IBARRITA";
+    <div id="inventoryContainer" class="inventory-grid">
+      <!-- Los productos se cargarán aquí desde el servidor -->
+    </div>
+  </div>
 
-        function cargarAlmacen() {
-            fetch('/api/inventario')
-                .then(res => res.json())
-                .then(datos => {
-                    let html = '';
-                    let productos = Object.keys(datos).sort();
-                    
-                    productos.forEach(nombre => {
-                        let stock = datos[nombre];
-                        let claseStock = stock <= 5 ? 'stock-bajo' : 'stock-ok';
-                        html += `
-                            <tr>
-                                <td>${nombre}</td>
-                                <td class="${claseStock}">${stock} unidades</td>
-                                <td>
-                                    <button class="btn-agregar" onclick="modificarStock('${nombre}', 'sumar')">➕ Agregar</button>
-                                    <button class="btn-restar" onclick="modificarStock('${nombre}', 'restar')">➖ Restar (Merma)</button>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                    document.getElementById('cuerpo-almacen').innerHTML = html;
-                });
+  <script>
+    let inventarioGlobal = {};
+
+    async function cargarInventario() {
+      try {
+        const res = await fetch('/api/inventario');
+        inventarioGlobal = await res.json();
+        renderInventario();
+      } catch (e) {
+        console.error("Error al cargar inventario", e);
+        document.getElementById('inventoryContainer').innerHTML = '<p>Error de conexión con el servidor.</p>';
+      }
+    }
+
+    function renderInventario() {
+      const container = document.getElementById('inventoryContainer');
+      const filtro = document.getElementById('buscador').value.toLowerCase();
+      container.innerHTML = '';
+
+      // Ordenar alfabéticamente para que sea más fácil de leer
+      const items = Object.keys(inventarioGlobal).sort();
+
+      items.forEach(nombre => {
+        // Filtro de búsqueda
+        if (nombre.toLowerCase().includes(filtro)) {
+          const stock = inventarioGlobal[nombre];
+          const div = document.createElement('div');
+          div.className = 'inv-card';
+          
+          const claseStock = stock <= 5 ? 'item-stock bajo' : 'item-stock';
+
+          div.innerHTML = `
+            <div class="item-name">${nombre}</div>
+            <div class="${claseStock}">${stock} pts</div>
+            <div class="controls">
+              <input type="number" id="input_${nombre}" class="input-cant" value="1" min="1">
+              <button class="btn btn-add" onclick="modificarStock('${nombre}', 'sumar')">➕</button>
+              <button class="btn btn-sub" onclick="modificarStock('${nombre}', 'restar')">➖</button>
+            </div>
+          `;
+          container.appendChild(div);
         }
+      });
+    }
 
-        function modificarStock(nombre, operacion) {
-            if (operacion === 'restar') {
-                let pass = prompt("Atención: Clave de autorización para restar inventario (Merma):");
-                if (pass !== claveSeguridad) return alert("Clave incorrecta. Acción denegada.");
-            }
+    async function modificarStock(nombre, operacion) {
+      const input = document.getElementById(`input_${nombre}`);
+      const cantidad = parseInt(input.value);
 
-            let cantidad = prompt(`¿Cuántas unidades deseas ${operacion} a "${nombre}"? (Ej. 2, 45, 100)`);
-            if (cantidad && !isNaN(cantidad) && parseInt(cantidad) > 0) {
-                fetch('/api/inventario/modificar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre: nombre, cantidad: cantidad, operacion: operacion })
-                }).then(() => cargarAlmacen());
-            } else if (cantidad !== null) {
-                alert("Por favor, ingresa un número válido.");
-            }
+      if (isNaN(cantidad) || cantidad <= 0) {
+        alert("Por favor ingresa una cantidad válida.");
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/inventario/modificar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, cantidad, operacion })
+        });
+
+        if (res.ok) {
+          // Recargar el inventario para ver los cambios reflejados al instante
+          cargarInventario();
+          // Regresar el input a 1
+          input.value = 1;
+        } else {
+          alert("Error al actualizar el inventario.");
         }
-        cargarAlmacen();
-    </script>
+      } catch (e) {
+        console.error("Error", e);
+      }
+    }
+
+    function filtrarInventario() {
+      renderInventario();
+    }
+
+    // Cargar los datos al abrir la página
+    cargarInventario();
+  </script>
 </body>
 </html>

@@ -1,120 +1,211 @@
-<!DOCTYPE html>
+k<!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comandero - Tortas La Queen</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; display: flex; height: 100vh; }
-        .menu-lateral { width: 60%; padding: 20px; overflow-y: auto; background: #fff; }
-        .carrito-lateral { width: 40%; background: #222; color: #fff; padding: 20px; display: flex; flex-direction: column; }
-        .nav-categorias { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-        .btn-categoria { padding: 15px; border: none; background: #ff9800; color: white; font-weight: bold; border-radius: 8px; cursor: pointer; flex-grow: 1; font-size: 1.1rem; }
-        .btn-categoria:hover { background: #e68a00; }
-        .grid-productos { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-        .btn-producto { padding: 15px; background: #eeeeee; border: 2px solid #ccc; border-radius: 8px; cursor: pointer; text-align: center; font-weight: bold; }
-        .btn-producto:hover { border-color: #ff9800; background: #fff3e0; }
-        .precio-badge { display: block; color: #d32f2f; margin-top: 5px; font-size: 0.9rem; }
-        .item-carrito { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #444; align-items: center;}
-        .btn-enviar { background: #8bc34a; color: #111; padding: 15px; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; margin-top: auto; }
-        .btn-quitar { background: red; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-weight: bold;}
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comandero - La Queen 👑</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+    body { padding: 15px; background: #f4f4f9; color: #333; }
+    h1, h2 { margin-bottom: 15px; text-align: center; }
+    .container { display: flex; flex-wrap: wrap; gap: 20px; max-width: 1200px; margin: 0 auto; }
+    
+    .menu-section { flex: 2; min-width: 320px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .order-section { flex: 1; min-width: 280px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    
+    /* Botones de Categorías */
+    .categories { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+    .cat-btn { padding: 10px 14px; border: 1px solid #ccc; background: #e0e0e0; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+    .cat-btn:hover { background: #d0d0d0; }
+    .cat-btn.active { background: #d32f2f; color: #fff; border-color: #b71c1c; }
+    
+    /* Grid de Productos */
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+    .item-btn { padding: 12px 8px; border: 1px solid #ddd; background: #fafafa; border-radius: 6px; text-align: center; cursor: pointer; font-weight: bold; display: flex; flex-direction: column; justify-content: space-between; min-height: 75px; transition: 0.2s; }
+    .item-btn:hover { background: #ffebee; border-color: #d32f2f; transform: translateY(-2px); }
+    .item-btn .price { font-size: 0.9em; color: #2e7d32; margin-top: 5px; }
+
+    /* Lista del Pedido */
+    .order-list { list-style: none; margin: 15px 0; max-height: 250px; overflow-y: auto; border-top: 1px solid #eee; }
+    .order-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .remove-btn { background: #ff5252; color: white; border: none; border-radius: 3px; padding: 3px 8px; cursor: pointer; font-weight: bold; }
+    
+    .input-field { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+    .btn-send { width: 100%; padding: 12px; background: #2e7d32; color: white; font-size: 16px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; transition: 0.2s; }
+    .btn-send:hover { background: #1b5e20; }
+
+    /* Monitoreo Cocina */
+    .kitchen-status { width: 100%; margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 10px; }
+    .card-pedido { border: 2px solid #ff9800; background: #fffde7; padding: 10px; border-radius: 6px; }
+    .card-pedido.cocina { border-color: #2196f3; background: #e3f2fd; }
+  </style>
 </head>
 <body>
-    <div class="menu-lateral">
-        <h2 style="color: #d32f2f; text-align: center;">👑 TORTAS GIGANTES LA QUEEN</h2>
-        <div class="nav-categorias" id="nav-categorias">Cargando menú...</div>
-        <h3 id="titulo-categoria"></h3>
-        <div class="grid-productos" id="grid-productos"></div>
-    </div>
-    <div class="carrito-lateral">
-        <h2>📝 Cuenta de la Mesa</h2>
-        <input type="text" id="nombre-cliente" placeholder="Nombre / Mesa (Ej. Mesa 3)" style="padding: 10px; width: 95%; margin-bottom: 15px; border-radius:5px; border:none;">
-        <div id="lista-carrito" style="flex-grow: 1; overflow-y: auto;"></div>
-        <h2 style="text-align: right; color: #8bc34a;">Total: $<span id="total-cuenta">0.00</span></h2>
-        <button class="btn-enviar" onclick="enviarPedido()">🚀 MANDAR PEDIDO</button>
+
+  <h1>Comandero - La Queen 👑</h1>
+
+  <div class="container">
+    <!-- SECCIÓN MENÚ -->
+    <div class="menu-section">
+      <h2>Categorías</h2>
+      <div id="categories" class="categories"></div>
+      <div id="products" class="products-grid"></div>
     </div>
 
-    <script>
-        let menu = {};
-        let carrito = [];
-        const claveSeguridad = "IBARRITA";
+    <!-- SECCIÓN COMANDA / PEDIDO -->
+    <div class="order-section">
+      <h2>Pedido Actual</h2>
+      <input type="text" id="mesaInput" class="input-field" placeholder="Mesa / Nombre del Cliente">
+      
+      <ul id="orderList" class="order-list"></ul>
+      
+      <h3>Total: $<span id="totalPrice">0</span></h3>
+      <br>
+      <button class="btn-send" onclick="enviarACocina()">🚀 Marcar a Cocina</button>
+    </div>
+  </div>
 
-        // CONEXIÓN AL SERVIDOR PARA DESCARGAR PRECIOS ACTUALIZADOS
-        fetch('/api/menu')
-            .then(res => res.json())
-            .then(datos => {
-                menu = datos;
-                const nav = document.getElementById('nav-categorias');
-                nav.innerHTML = ''; 
-                for (let cat in menu) {
-                    let btn = document.createElement('button');
-                    btn.className = 'btn-categoria';
-                    btn.innerText = cat;
-                    btn.onclick = () => cargarProductos(cat);
-                    nav.appendChild(btn);
-                }
-            });
+  <!-- MONITOREO DE COCINA EN TIEMPO REAL -->
+  <div class="container">
+    <div class="kitchen-status">
+      <h2>Pedidos en Cocina / Pendientes</h2>
+      <div id="pedidosActivos" class="orders-grid"></div>
+    </div>
+  </div>
 
-        function cargarProductos(categoria) {
-            document.getElementById('titulo-categoria').innerText = categoria;
-            const grid = document.getElementById('grid-productos');
-            grid.innerHTML = '';
-            menu[categoria].forEach(prod => {
-                let btn = document.createElement('button');
-                btn.className = 'btn-producto';
-                btn.innerHTML = `${prod.nombre} <span class="precio-badge">$${prod.precio}</span>`;
-                btn.onclick = () => agregarAlCarrito(prod);
-                grid.appendChild(btn);
-            });
-        }
+  <script>
+    let menuData = {};
+    let currentOrder = [];
 
-        function agregarAlCarrito(producto) {
-            let item = carrito.find(i => i.nombre === producto.nombre);
-            if (item) { item.cantidad++; item.subtotal += producto.precio; } 
-            else { carrito.push({ nombre: producto.nombre, precio: producto.precio, cantidad: 1, subtotal: producto.precio }); }
-            actualizarCarrito();
-        }
+    async function init() {
+      try {
+        const res = await fetch('/api/menu');
+        menuData = await res.json();
+        renderCategories();
+        cargarPedidos();
+        setInterval(cargarPedidos, 4000);
+      } catch (e) {
+        console.error("Error al cargar menú", e);
+      }
+    }
 
-        function actualizarCarrito() {
-            let html = '';
-            let total = 0;
-            carrito.forEach((item, index) => {
-                total += item.subtotal;
-                html += `<div class="item-carrito">
-                    <span>${item.cantidad}x ${item.nombre}</span>
-                    <span>$${item.subtotal} <button class="btn-quitar" onclick="quitarItem(${index})">X</button></span>
-                </div>`;
-            });
-            document.getElementById('lista-carrito').innerHTML = html;
-            document.getElementById('total-cuenta').innerText = total.toFixed(2);
-        }
+    function renderCategories() {
+      const catContainer = document.getElementById('categories');
+      catContainer.innerHTML = '';
+      const categories = Object.keys(menuData);
+      
+      categories.forEach((cat, index) => {
+        const btn = document.createElement('button');
+        btn.className = `cat-btn ${index === 0 ? 'active' : ''}`;
+        btn.innerText = cat;
+        btn.onclick = () => {
+          document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderProducts(cat);
+        };
+        catContainer.appendChild(btn);
+      });
 
-        function quitarItem(index) { 
-            let pass = prompt("Atención: Ingrese clave de autorización para borrar productos:");
-            if (pass === claveSeguridad) {
-                carrito.splice(index, 1); 
-                actualizarCarrito(); 
-            } else { alert("Clave incorrecta. Acción denegada."); }
-        }
+      if (categories.length > 0) renderProducts(categories[0]);
+    }
 
-        function enviarPedido() {
-            let cliente = document.getElementById('nombre-cliente').value;
-            if (!cliente) return alert("Ingresa el Nombre o la Mesa");
-            if (carrito.length === 0) return alert("Agrega productos al pedido");
-            let total = carrito.reduce((sum, item) => sum + item.subtotal, 0);
-            
-            fetch('/api/pedidos', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cliente: cliente, items: carrito, total: total, estado: 'Pendiente', fecha: new Date().toLocaleString() })
-            }).then(() => {
-                alert("¡Pedido enviado a caja/cocina!");
-                carrito = [];
-                document.getElementById('nombre-cliente').value = '';
-                actualizarCarrito();
-            });
-        }
-    </script>
+    function renderProducts(category) {
+      const prodContainer = document.getElementById('products');
+      prodContainer.innerHTML = '';
+      
+      (menuData[category] || []).forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item-btn';
+        div.innerHTML = `<span>${item.nombre}</span><span class="price">$${item.precio}</span>`;
+        div.onclick = () => agregarAlPedido(item);
+        prodContainer.appendChild(div);
+      });
+    }
+
+    function agregarAlPedido(item) {
+      const existe = currentOrder.find(p => p.nombre === item.nombre);
+      if (existe) {
+        existe.cantidad += 1;
+      } else {
+        currentOrder.push({ ...item, cantidad: 1 });
+      }
+      renderOrder();
+    }
+
+    function renderOrder() {
+      const list = document.getElementById('orderList');
+      list.innerHTML = '';
+      let total = 0;
+
+      currentOrder.forEach((item, index) => {
+        total += item.precio * item.cantidad;
+        const li = document.createElement('li');
+        li.className = 'order-item';
+        li.innerHTML = `
+          <span>${item.cantidad}x ${item.nombre}</span>
+          <span>$${item.precio * item.cantidad}</span>
+          <button class="remove-btn" onclick="quitarDelPedido(${index})">✕</button>
+        `;
+        list.appendChild(li);
+      });
+
+      document.getElementById('totalPrice').innerText = total;
+    }
+
+    function quitarDelPedido(index) {
+      currentOrder.splice(index, 1);
+      renderOrder();
+    }
+
+    async function enviarACocina() {
+      const mesa = document.getElementById('mesaInput').value.trim();
+      if (!mesa) return alert('Por favor escribe la mesa o nombre del cliente.');
+      if (currentOrder.length === 0) return alert('Agrega al menos un producto.');
+
+      const pedido = {
+        cliente: mesa,
+        items: currentOrder,
+        estado: 'En Cocina',
+        total: parseFloat(document.getElementById('totalPrice').innerText)
+      };
+
+      const res = await fetch('/api/pedidos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pedido)
+      });
+
+      if (res.ok) {
+        alert('¡Pedido enviado a cocina!');
+        currentOrder = [];
+        document.getElementById('mesaInput').value = '';
+        renderOrder();
+        cargarPedidos();
+      }
+    }
+
+    async function cargarPedidos() {
+      try {
+        const res = await fetch('/api/pedidos');
+        const pedidos = await res.json();
+        const grid = document.getElementById('pedidosActivos');
+        grid.innerHTML = '';
+
+        pedidos.filter(p => p.estado !== 'Cobrado').forEach(p => {
+          const div = document.createElement('div');
+          div.className = `card-pedido ${p.estado === 'En Cocina' ? 'cocina' : ''}`;
+          div.innerHTML = `
+            <strong>${p.cliente}</strong> (${p.estado})<br>
+            <small>${p.items.map(i => `${i.cantidad}x ${i.nombre}`).join(', ')}</small><br>
+            <b>Total: $${p.total}</b>
+          `;
+          grid.appendChild(div);
+        });
+      } catch(e) {}
+    }
+
+    init();
+  </script>
 </body>
 </html>

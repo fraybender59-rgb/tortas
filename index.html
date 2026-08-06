@@ -1,24 +1,114 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tortas Queen - Sistema Principal</title>
-    <style>
-        body { background-color: #121216; color: #f5f5f7; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: #18181f; padding: 30px; border-radius: 10px; border: 1px solid #333; text-align: center; width: 90%; max-width: 400px; }
-        h1 { color: #ff9800; margin-bottom: 20px; }
-        .btn { display: block; background: #333; color: #fff; padding: 12px; margin: 10px 0; border-radius: 5px; text-decoration: none; font-weight: bold; border: 1px solid #555; }
-        .btn:hover { background: #ff9800; color: #111; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inicio - La Queen 👑</title>
+  <!-- Proyecto: #hamburguesas -->
+  <style>
+    * { 
+      box-sizing: border-box; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      margin: 0; 
+      padding: 0; 
+    }
+    body { 
+      background: #f4f4f9; 
+      color: #333; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      min-height: 100vh; 
+      padding: 20px; 
+    }
+    .header { 
+      text-align: center; 
+      margin-bottom: 40px; 
+    }
+    .header h1 { 
+      font-size: 2.5em; 
+      color: #b71c1c; 
+      margin-bottom: 10px; 
+    }
+    .header p { 
+      font-size: 1.2em; 
+      color: #555; 
+    }
+    .nav-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+      gap: 20px; 
+      width: 100%; 
+      max-width: 900px; 
+    }
+    .nav-card { 
+      background: #fff; 
+      padding: 30px 20px; 
+      border-radius: 12px; 
+      text-align: center; 
+      text-decoration: none; 
+      color: #333; 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+      transition: transform 0.3s, box-shadow 0.3s; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      border: 2px solid transparent;
+    }
+    .nav-card:hover { 
+      transform: translateY(-5px); 
+      box-shadow: 0 8px 15px rgba(0,0,0,0.15); 
+      border-color: #b71c1c; 
+    }
+    .icon { 
+      font-size: 3em; 
+      margin-bottom: 15px; 
+    }
+    .nav-card h2 { 
+      font-size: 1.5em; 
+      margin-bottom: 10px; 
+    }
+    .nav-card p { 
+      font-size: 1em; 
+      color: #666; 
+    }
+    
+    /* Colores específicos por módulo para guiar la vista rápido */
+    .card-comandero .icon { color: #2e7d32; }
+    .card-almacen .icon { color: #1976d2; }
+    .card-admin .icon { color: #f57c00; }
+  </style>
 </head>
 <body>
-    <div class="card">
-        <h1>👑 Tortas Queen</h1>
-        <p style="color: #aaa; margin-bottom: 20px;">Selecciona el módulo que deseas abrir:</p>
-        <a href="comandero.html" class="btn">📱 Ir al Comandero</a>
-        <a href="administracion.html" class="btn">⚙️ Ir a Caja / Administración</a>
-        <a href="almacen.html" class="btn">📦 Ir al Almacén</a>
-    </div>
+
+  <div class="header">
+    <h1>👑 La Queen</h1>
+    <p>Sistema de Punto de Venta y Control</p>
+  </div>
+
+  <div class="nav-grid">
+    <!-- Botón hacia el Comandero -->
+    <a href="comandero.html" class="nav-card card-comandero">
+      <div class="icon">📝</div>
+      <h2>Comandero</h2>
+      <p>Tomar pedidos y enviarlos directo a cocina.</p>
+    </a>
+
+    <!-- Botón hacia el Almacén -->
+    <a href="almacen.html" class="nav-card card-almacen">
+      <div class="icon">📦</div>
+      <h2>Almacén</h2>
+      <p>Controlar inventario, sumar o restar insumos.</p>
+    </a>
+
+    <!-- Botón hacia la Administración -->
+    <a href="administracion.html" class="nav-card card-admin">
+      <div class="icon">📊</div>
+      <h2>Administración</h2>
+      <p>Cobrar pedidos, historial y configuración.</p>
+    </a>
+  </div>
+
 </body>
 </html>
