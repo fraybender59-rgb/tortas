@@ -2,7 +2,7 @@ const express = require('express');
 const admin = require('firebase-admin');
 
 const app = express();
-app.use(express.json({ limit: '10mb' })); // Aumentamos el límite para permitir subir fotos
+app.use(express.json({ limit: '10mb' })); 
 
 if (!admin.apps.length) {
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -13,7 +13,30 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// 👇 MENÚ CON DESCRIPCIONES (INGREDIENTES) EXTRAÍDAS DE TUS FOTOS 👇
+// Función automática para borrar comprobantes de más de 30 días
+async function limpiarComprobantesAntiguos() {
+    try {
+        const hace30Dias = new Date();
+        hace30Dias.setDate(hace30Dias.getDate() - 30);
+        const isoLimite = hace30Dias.toISOString(); // Fecha límite en texto
+
+        const snapshot = await db.collection('comprobantes').where('creadoEn', '<', isoLimite).get();
+        
+        if (snapshot.empty) return; // Si no hay viejos, no hace nada
+
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        
+        await batch.commit();
+        console.log(`🧹 Limpieza automática: Se borraron ${snapshot.size} comprobantes antiguos.`);
+    } catch (e) {
+        console.error("Error limpiando comprobantes antiguos:", e.message);
+    }
+}
+
+// MENÚ BASE
 const menuBase = {
   "Sencillas": [
     {"nombre": "Milanesa", "precio": 75, "descripcion": "Un ingrediente a escoger. Complemento: jitomate, aguacate, mayonesa; rajas o chipotle."},
@@ -75,7 +98,6 @@ const menuBase = {
   ]
 };
 
-// Inventario base (se mantiene igual)
 const invBase = { 
   "Milanesa": 50, "Pierna": 50, "Salchicha": 50, "Jamón": 50, "Huevo": 50, "Chuleta": 50, "Q. Puerco": 50,
   "Verónica": 50, "Tatiana": 50, "Mexiquense": 50, "Alemana": 50, "Texana": 50, "Pachuqueña": 50, "Española": 50, "Argentina": 50, "Tabasqueña": 50, "Jarocha": 50, "Veracruzana": 50,
@@ -105,31 +127,29 @@ app.get('/api/pedidos', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 🔥 AQUÍ MODIFICAMOS PARA RECIBIR LA FOTO DEL CLIENTE 🔥
 app.post('/api/pedidos', async (req, res) => {
   try {
-    // Separamos el comprobante del resto de los datos del pedido
     const { comprobanteAdjunto, ...datosPedido } = req.body;
     
-    // Si el cliente mandó comprobante, le ponemos un aviso (bandera) al pedido para la caja
     const nuevoPedido = { 
         ...datosPedido, 
         fecha: new Date().toISOString(),
         tieneFoto: comprobanteAdjunto ? true : false 
     };
     
-    // Guardamos el pedido
     const docRef = await db.collection('pedidos').add(nuevoPedido);
 
-    // Si mandó foto, la guardamos en la galería de comprobantes que hicimos ayer
     if (comprobanteAdjunto) {
         await db.collection('comprobantes').add({
             pedidoId: docRef.id,
-            fecha: nuevoPedido.fecha.split('T')[0], // Se guarda con la fecha de hoy YYYY-MM-DD
+            fecha: nuevoPedido.fecha.split('T')[0], 
             imagen: comprobanteAdjunto,
             creadoEn: nuevoPedido.fecha
         });
     }
+
+    // Ejecutamos limpieza automática sin detener el proceso del cliente
+    limpiarComprobantesAntiguos();
 
     res.json({ success: true, id: docRef.id });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -231,15 +251,6 @@ app.get('/api/comprobantes', async (req, res) => {
     const fotos = [];
     snapshot.forEach(doc => fotos.push(doc.data().imagen));
     res.json(fotos);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/comprobantes', async (req, res) => {
-  try {
-    const { fecha, imagen } = req.body;
-    if (!fecha || !imagen) return res.status(400).json({ error: 'Faltan datos' });
-    await db.collection('comprobantes').add({ fecha: fecha, imagen: imagen, creadoEn: new Date().toISOString() });
-    res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

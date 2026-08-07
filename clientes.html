@@ -7,7 +7,14 @@
     <style>
         body { background-color: #121216; color: #f5f5f7; font-family: monospace; margin: 0; padding: 15px; padding-bottom: 80px; }
         .header { text-align: center; color: #ff9800; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-        .categoria-titulo { color: #8bc34a; margin-top: 20px; text-transform: uppercase; border-bottom: 1px solid #444; }
+        
+        /* Contenedor de botones de categoría */
+        .categorias-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; justify-content: center; }
+        .btn-categoria { background: #222; color: #aaa; border: 1px solid #444; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: monospace; }
+        .btn-categoria:hover { background: #333; }
+        .btn-categoria.activa { background: #8bc34a; color: #111; border-color: #8bc34a; }
+        
+        .categoria-seccion { display: none; } /* Ocultar todas por defecto */
         
         .producto-card { background: #1e1e24; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; gap: 5px; }
         .producto-header { display: flex; justify-content: space-between; align-items: center; }
@@ -17,10 +24,10 @@
         
         .controles-agregar { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; border-top: 1px dashed #444; padding-top: 10px; }
         .input-comentario { background: #111; color: #fff; border: 1px solid #555; padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; font-family: monospace; }
-        .btn-agregar { background: #ff9800; color: #111; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; text-align: center; }
+        .btn-agregar { background: #ff9800; color: #111; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; text-align: center; font-family: monospace; }
         
         .carrito-flotante { position: fixed; bottom: 0; left: 0; width: 100%; background: #2a2a35; padding: 15px; border-top: 2px solid #ff9800; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; z-index: 100; }
-        .btn-ver-carrito { background: #8bc34a; color: #111; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        .btn-ver-carrito { background: #8bc34a; color: #111; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-family: monospace; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .modal-titulo { color: #ff9800; text-align: center; margin-bottom: 20px; }
@@ -29,12 +36,12 @@
         .btn-eliminar { background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; float: right; margin-top: -20px; }
         
         .seccion-pago { background: #111; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #444; }
-        .input-form { width: 100%; padding: 10px; margin-bottom: 10px; background: #222; color: #fff; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; }
-        .btn-confirmar { background: #8bc34a; color: #111; width: 100%; padding: 15px; border: none; font-weight: bold; font-size: 1.1rem; border-radius: 5px; cursor: pointer; margin-top: 10px; }
-        .btn-cerrar-modal { background: #444; color: #fff; width: 100%; padding: 10px; border: none; margin-top: 10px; border-radius: 5px; cursor: pointer; }
+        .input-form { width: 100%; padding: 10px; margin-bottom: 10px; background: #222; color: #fff; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; font-family: monospace; }
+        .btn-confirmar { background: #8bc34a; color: #111; width: 100%; padding: 15px; border: none; font-weight: bold; font-size: 1.1rem; border-radius: 5px; cursor: pointer; margin-top: 10px; font-family: monospace; }
+        .btn-cerrar-modal { background: #444; color: #fff; width: 100%; padding: 10px; border: none; margin-top: 10px; border-radius: 5px; cursor: pointer; font-family: monospace; }
         
         .file-upload-wrapper { display: flex; flex-direction: column; align-items: center; gap: 10px; background: #222; padding: 15px; border-radius: 5px; border: 1px dashed #8bc34a; margin-bottom: 10px; }
-        .btn-upload { background: #3f51b5; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-upload { background: #3f51b5; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -44,6 +51,7 @@
         <p>Tortas Gigantes - El tamaño sí importa</p>
     </div>
 
+    <!-- Contenedor donde se insertarán los botones y los productos -->
     <div id="contenedor-menu">Cargando menú...</div>
 
     <div class="carrito-flotante">
@@ -68,6 +76,7 @@
                 <option value="Transferencia">Transferencia Bancaria</option>
             </select>
 
+            <!-- Sección de transferencia que aparece/desaparece -->
             <div id="info-transferencia" style="display:none;">
                 <p style="color: #aaa; font-size: 0.9rem;">Transfiere a esta cuenta y sube la captura de pantalla:</p>
                 <div style="background: #000; padding: 10px; text-align: center; font-size: 1.2rem; color: #8bc34a; letter-spacing: 2px; margin-bottom: 10px; border-radius: 5px;" id="numero-tarjeta">Cargando tarjeta...</div>
@@ -89,32 +98,54 @@
         let carrito = [];
         let fotoBase64 = null;
 
-        // Cargar menú
+        // Cargar menú y armar botones de categoría
         fetch('/api/menu').then(r => r.json()).then(menu => {
-            let html = "";
+            let htmlBotones = '<div class="categorias-container">';
+            let htmlProductos = '';
+            let primeraCategoria = true;
+
             for (let categoria in menu) {
-                html += `<h3 class="categoria-titulo">${categoria}</h3>`;
+                let idCat = categoria.replace(/\s+/g, '-');
+                
+                // Botones superiores
+                htmlBotones += `<button class="btn-categoria ${primeraCategoria ? 'activa' : ''}" onclick="mostrarCategoria('${idCat}')" id="btn-${idCat}">${categoria}</button>`;
+                
+                // Contenedores de productos
+                htmlProductos += `<div id="cat-${idCat}" class="categoria-seccion" style="display: ${primeraCategoria ? 'block' : 'none'};">`;
+                
                 menu[categoria].forEach(prod => {
-                    // Limpiamos espacios para el ID del input
                     let idInput = prod.nombre.replace(/\s+/g, ''); 
-                    
-                    html += `
+                    htmlProductos += `
                     <div class="producto-card">
                         <div class="producto-header">
                             <span class="producto-nombre">${prod.nombre}</span>
                             <span class="producto-precio">$${prod.precio}</span>
                         </div>
                         <div class="producto-desc">${prod.descripcion || ''}</div>
-                        
                         <div class="controles-agregar">
                             <input type="text" id="nota-${idInput}" class="input-comentario" placeholder="Ej. Sin cebolla, extra mayo...">
                             <button class="btn-agregar" onclick="agregarAlCarrito('${prod.nombre}', ${prod.precio}, '${idInput}')">Añadir al Carrito</button>
                         </div>
                     </div>`;
                 });
+                htmlProductos += `</div>`;
+                primeraCategoria = false;
             }
-            document.getElementById('contenedor-menu').innerHTML = html;
+            htmlBotones += '</div>';
+            document.getElementById('contenedor-menu').innerHTML = htmlBotones + htmlProductos;
         });
+
+        // Función para cambiar entre categorías
+        function mostrarCategoria(idCat) {
+            // Ocultar todos los productos
+            document.querySelectorAll('.categoria-seccion').forEach(div => div.style.display = 'none');
+            // Quitar clase activa de todos los botones
+            document.querySelectorAll('.btn-categoria').forEach(btn => btn.classList.remove('activa'));
+            
+            // Mostrar la categoría seleccionada y activar su botón
+            document.getElementById(`cat-${idCat}`).style.display = 'block';
+            document.getElementById(`btn-${idCat}`).classList.add('activa');
+        }
 
         // Cargar tarjeta configurada en caja
         fetch('/api/config/tarjeta').then(r => r.json()).then(data => {
@@ -177,7 +208,7 @@
                 divTransferencia.style.display = 'block';
             } else {
                 divTransferencia.style.display = 'none';
-                fotoBase64 = null; // Limpiar foto si cambia a efectivo
+                fotoBase64 = null; 
                 document.getElementById('estado-foto').innerText = 'Ninguna foto seleccionada';
                 document.getElementById('input-foto').value = "";
             }
@@ -214,10 +245,9 @@
                 total: total,
                 estado: "Pendiente",
                 metodoPagoInicial: metodo,
-                comprobanteAdjunto: fotoBase64 // Se envía la foto (o null si es efectivo)
+                comprobanteAdjunto: fotoBase64 
             };
 
-            // Mostrar estado de carga (porque subir foto pesa un poco)
             let btnConfirmar = document.querySelector('.btn-confirmar');
             btnConfirmar.innerText = "⏳ Enviando pedido...";
             btnConfirmar.disabled = true;
