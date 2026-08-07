@@ -1,18 +1,19 @@
 const express = require('express');
 const admin = require('firebase-admin');
+const path = require('path');
 
 const app = express();
-app.use(express.json({ limit: '10mb' })); 
+app.use(express.json({ limit: '10mb' }));
+app.use(express.static(__dirname));
 
 if (!admin.apps.length) {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+    });
 }
 
 const db = admin.firestore();
-
 // Función automática para borrar comprobantes de más de 30 días
 async function limpiarComprobantesAntiguos() {
     try {
