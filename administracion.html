@@ -308,11 +308,10 @@
 
                     pedidos.slice().reverse().forEach(p => {
                         if (!p.id) return; 
-                        let estadoClase = p.estado === 'Cancelado' ? 'cancelado' : p.estado === 'Cobrado' ? 'cobrado' : '';
-                        let productosTexto = p.items.map(i => `<div>${i.cantidad}x ${i.nombre} ($${i.subtotal || (i.cantidad * i.precio)})</div>`).join('');
-                        let infoExtra = "";
-                        
-                        if (p.estado === 'Cobrado') {
+                        let estadoClase = p.estado === 'Cancelado' ? 'cancelado' : p.estado === 'Cobrado' ? 'cobrado' : '';   
+                       let productosTexto = p.items.map(i => `<div style="margin-bottom:3px;">${i.cantidad}x ${i.nombre} ($${i.subtotal || (i.cantidad * i.precio)}) <br><span style="font-size:0.85em; color:#03a9f4;">${i.comentario ? '📝 Nota: ' + i.comentario : ''}</span></div>`).join('');                       
+                       let infoExtra = "";
+                       if (p.estado === 'Cobrado') {
                             infoExtra = `<div style="color:#8bc34a; font-weight:bold; margin-top:5px;">✅ Pagado en ${p.metodo}</div>`;
                             totalVentasCobradas += parseFloat(p.total); 
                         } else if (p.estado === 'Cancelado') {
@@ -333,8 +332,7 @@
 
                         let tarjetaHTML = `
                             <div class="tarjeta-pedido ${estadoClase}">
-                                <div><strong>${p.cliente}</strong> <span style="font-size:0.8rem; color:#aaa;">(${p.fecha || 'Sin fecha'})</span></div>
-                                <hr style="border-color:#333; margin:8px 0;">
+                            <div><strong>${p.cliente}</strong> ${p.tieneFoto ? '📸' : ''} <span style="font-size:0.8rem; color:#aaa;">(${p.fecha || 'Sin fecha'})</span></div>                                <hr style="border-color:#333; margin:8px 0;">
                                 ${productosTexto}
                                 <hr style="border-color:#333; margin:8px 0;">
                                 <div style="font-size: 1.2rem; color:#ff9800;"><strong>Total: $${parseFloat(p.total).toFixed(2)}</strong></div>

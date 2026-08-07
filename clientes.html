@@ -1,212 +1,250 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Menú - La Queen 👑</title>
-  <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
-    body { padding: 15px; background: #f4f4f9; color: #333; }
-    h1, h2, h3 { margin-bottom: 15px; text-align: center; }
-    .container { display: flex; flex-wrap: wrap; gap: 20px; max-width: 1200px; margin: 0 auto; justify-content: center; }
-    
-    .menu-section { flex: 2; min-width: 320px; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    .order-section { flex: 1; min-width: 300px; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    
-    /* Botones de Categorías */
-    .categories { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; justify-content: center; }
-    .cat-btn { padding: 10px 14px; border: 1px solid #ccc; background: #e0e0e0; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; }
-    .cat-btn:hover { background: #d0d0d0; }
-    .cat-btn.active { background: #d32f2f; color: #fff; border-color: #b71c1c; }
-    
-    /* Grid de Productos */
-    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-    .item-btn { padding: 12px 8px; border: 1px solid #ddd; background: #fafafa; border-radius: 6px; text-align: center; cursor: pointer; font-weight: bold; display: flex; flex-direction: column; justify-content: space-between; min-height: 85px; transition: 0.2s; }
-    .item-btn:hover { background: #ffebee; border-color: #d32f2f; transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .item-btn .price { font-size: 1em; color: #2e7d32; margin-top: 5px; }
-
-    /* Lista del Pedido */
-    .order-list { list-style: none; margin: 15px 0; max-height: 250px; overflow-y: auto; border-top: 1px solid #eee; }
-    .order-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-    .remove-btn { background: #ff5252; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-weight: bold; }
-    
-    .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ccc; border-radius: 6px; font-size: 16px; transition: 0.3s; }
-    .input-field:focus { border-color: #b71c1c; outline: none; }
-    
-    .btn-send { width: 100%; padding: 15px; background: #25D366; color: white; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 15px; }
-    .btn-send:hover { background: #128C7E; }
-
-    /* Instrucciones de Pago */
-    .pago-info { background: #e3f2fd; border: 2px dashed #2196f3; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; }
-    .num-cuenta { font-size: 1.4em; font-weight: bold; letter-spacing: 2px; color: #0d47a1; margin: 10px 0; user-select: all; }
-    .instrucciones { font-size: 0.9em; color: #555; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú La Queen</title>
+    <style>
+        body { background-color: #121216; color: #f5f5f7; font-family: monospace; margin: 0; padding: 15px; padding-bottom: 80px; }
+        .header { text-align: center; color: #ff9800; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .categoria-titulo { color: #8bc34a; margin-top: 20px; text-transform: uppercase; border-bottom: 1px solid #444; }
+        
+        .producto-card { background: #1e1e24; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; gap: 5px; }
+        .producto-header { display: flex; justify-content: space-between; align-items: center; }
+        .producto-nombre { font-size: 1.2rem; font-weight: bold; color: #fff; }
+        .producto-precio { color: #00bcd4; font-weight: bold; font-size: 1.1rem; }
+        .producto-desc { font-size: 0.85rem; color: #aaa; margin-top: 3px; }
+        
+        .controles-agregar { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; border-top: 1px dashed #444; padding-top: 10px; }
+        .input-comentario { background: #111; color: #fff; border: 1px solid #555; padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; font-family: monospace; }
+        .btn-agregar { background: #ff9800; color: #111; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; text-align: center; }
+        
+        .carrito-flotante { position: fixed; bottom: 0; left: 0; width: 100%; background: #2a2a35; padding: 15px; border-top: 2px solid #ff9800; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; z-index: 100; }
+        .btn-ver-carrito { background: #8bc34a; color: #111; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        .modal-titulo { color: #ff9800; text-align: center; margin-bottom: 20px; }
+        .item-carrito { background: #1e1e24; padding: 10px; margin-bottom: 10px; border-radius: 5px; border-left: 3px solid #ff9800; }
+        .item-nota { color: #03a9f4; font-size: 0.8rem; font-style: italic; display: block; margin-top: 5px; }
+        .btn-eliminar { background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; float: right; margin-top: -20px; }
+        
+        .seccion-pago { background: #111; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #444; }
+        .input-form { width: 100%; padding: 10px; margin-bottom: 10px; background: #222; color: #fff; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; }
+        .btn-confirmar { background: #8bc34a; color: #111; width: 100%; padding: 15px; border: none; font-weight: bold; font-size: 1.1rem; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        .btn-cerrar-modal { background: #444; color: #fff; width: 100%; padding: 10px; border: none; margin-top: 10px; border-radius: 5px; cursor: pointer; }
+        
+        .file-upload-wrapper { display: flex; flex-direction: column; align-items: center; gap: 10px; background: #222; padding: 15px; border-radius: 5px; border: 1px dashed #8bc34a; margin-bottom: 10px; }
+        .btn-upload { background: #3f51b5; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
 </head>
 <body>
 
-  <h1 style="color: #b71c1c; font-size: 2.5em; margin-top: 10px;">👑 La Queen - Haz tu Pedido</h1>
-
-  <div class="container">
-    <!-- SECCIÓN MENÚ -->
-    <div class="menu-section">
-      <h2>Nuestro Menú</h2>
-      <div id="categories" class="categories"></div>
-      <div id="products" class="products-grid"></div>
+    <div class="header">
+        <h1>👑 La Queen</h1>
+        <p>Tortas Gigantes - El tamaño sí importa</p>
     </div>
 
-    <!-- SECCIÓN PEDIDO Y PAGO -->
-    <div class="order-section">
-      <h2>Tu Pedido</h2>
-      <input type="text" id="nombreInput" class="input-field" placeholder="¿A qué nombre preparamos tu pedido?">
-      
-      <ul id="orderList" class="order-list"></ul>
-      
-      <h3 style="color: #b71c1c;">Total a pagar: $<span id="totalPrice">0</span></h3>
-      
-      <div class="pago-info">
-        <p><strong>Transfiere a la siguiente tarjeta:</strong></p>
-        <!-- Este número se conectará después con la base de datos para que puedas cambiarlo -->
-        <div id="tarjetaDisplay" class="num-cuenta">1234 5678 9012 3456</div>
-        <p class="instrucciones">Al confirmar, te enviaremos a WhatsApp para que nos mandes la captura de tu pago y preparemos tu orden.</p>
-      </div>
+    <div id="contenedor-menu">Cargando menú...</div>
 
-      <button class="btn-send" onclick="enviarPedido()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.002 3.824-3.115 6.938-6.937 6.938z"/></svg>
-        Confirmar Pedido y Enviar Captura
-      </button>
+    <div class="carrito-flotante">
+        <div style="font-size: 1.2rem; font-weight: bold;">Total: $<span id="total-flotante">0.00</span></div>
+        <button class="btn-ver-carrito" onclick="abrirCarrito()">Ver Pedido (<span id="contador-carrito">0</span>)</button>
     </div>
-  </div>
 
-  <script>
-    let menuData = {};
-    let currentOrder = [];
-    const numeroWhatsApp = "5215535951890"; // Tu número de WhatsApp
-
-    async function init() {
-      try {
-        const res = await fetch('/api/menu');
-        menuData = await res.json();
-        renderCategories();
+    <!-- MODAL DEL CARRITO Y PAGO -->
+    <div id="modal-carrito" class="modal">
+        <h2 class="modal-titulo">🛒 Tu Pedido</h2>
+        <div id="lista-carrito"></div>
         
-        // Aquí pediremos el número de tarjeta a la base de datos (lo haremos funcional en app.js)
-        const resConfig = await fetch('/api/config/tarjeta');
-        if(resConfig.ok) {
-            const data = await resConfig.json();
-            if(data.numero) document.getElementById('tarjetaDisplay').innerText = data.numero;
-        }
-      } catch (e) {
-        console.error("Error al cargar datos", e);
-      }
-    }
+        <h3 style="color:#00bcd4; text-align: right;">Total a Pagar: $<span id="total-carrito">0.00</span></h3>
+        
+        <div class="seccion-pago">
+            <h4 style="color: #ff9800; margin-top:0;">1. Tus Datos</h4>
+            <input type="text" id="nombre-cliente" class="input-form" placeholder="Tu Nombre">
+            
+            <h4 style="color: #ff9800;">2. Método de Pago</h4>
+            <select id="metodo-pago" class="input-form" onchange="verificarMetodoPago()">
+                <option value="Efectivo">Efectivo al recoger</option>
+                <option value="Transferencia">Transferencia Bancaria</option>
+            </select>
 
-    function renderCategories() {
-      const catContainer = document.getElementById('categories');
-      catContainer.innerHTML = '';
-      const categories = Object.keys(menuData);
-      
-      categories.forEach((cat, index) => {
-        const btn = document.createElement('button');
-        btn.className = `cat-btn ${index === 0 ? 'active' : ''}`;
-        btn.innerText = cat;
-        btn.onclick = () => {
-          document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          renderProducts(cat);
-        };
-        catContainer.appendChild(btn);
-      });
+            <div id="info-transferencia" style="display:none;">
+                <p style="color: #aaa; font-size: 0.9rem;">Transfiere a esta cuenta y sube la captura de pantalla:</p>
+                <div style="background: #000; padding: 10px; text-align: center; font-size: 1.2rem; color: #8bc34a; letter-spacing: 2px; margin-bottom: 10px; border-radius: 5px;" id="numero-tarjeta">Cargando tarjeta...</div>
+                
+                <div class="file-upload-wrapper">
+                    <input type="file" id="input-foto" accept="image/*" style="display: none;" onchange="procesarFoto(event)">
+                    <button class="btn-upload" onclick="document.getElementById('input-foto').click()">📸 Subir Captura de Pago</button>
+                    <span id="estado-foto" style="color: #aaa; font-size: 0.8rem;">Ninguna foto seleccionada</span>
+                </div>
+            </div>
+            
+            <button class="btn-confirmar" onclick="enviarPedido()">🚀 Enviar Pedido a Cocina</button>
+        </div>
+        
+        <button class="btn-cerrar-modal" onclick="cerrarCarrito()">Volver al Menú</button>
+    </div>
 
-      if (categories.length > 0) renderProducts(categories[0]);
-    }
+    <script>
+        let carrito = [];
+        let fotoBase64 = null;
 
-    function renderProducts(category) {
-      const prodContainer = document.getElementById('products');
-      prodContainer.innerHTML = '';
-      
-      (menuData[category] || []).forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'item-btn';
-        div.innerHTML = `<span>${item.nombre}</span><span class="price">$${item.precio}</span>`;
-        div.onclick = () => agregarAlPedido(item);
-        prodContainer.appendChild(div);
-      });
-    }
-
-    function agregarAlPedido(item) {
-      const existe = currentOrder.find(p => p.nombre === item.nombre);
-      if (existe) {
-        existe.cantidad += 1;
-      } else {
-        currentOrder.push({ ...item, cantidad: 1 });
-      }
-      renderOrder();
-    }
-
-    function renderOrder() {
-      const list = document.getElementById('orderList');
-      list.innerHTML = '';
-      let total = 0;
-
-      currentOrder.forEach((item, index) => {
-        total += item.precio * item.cantidad;
-        const li = document.createElement('li');
-        li.className = 'order-item';
-        li.innerHTML = `
-          <span>${item.cantidad}x ${item.nombre}</span>
-          <span>$${item.precio * item.cantidad}</span>
-          <button class="remove-btn" onclick="quitarDelPedido(${index})">✕</button>
-        `;
-        list.appendChild(li);
-      });
-
-      document.getElementById('totalPrice').innerText = total;
-    }
-
-    function quitarDelPedido(index) {
-      currentOrder.splice(index, 1);
-      renderOrder();
-    }
-
-    async function enviarPedido() {
-      const nombre = document.getElementById('nombreInput').value.trim();
-      const total = document.getElementById('totalPrice').innerText;
-
-      if (!nombre) return alert('Por favor, dinos tu nombre para preparar el pedido.');
-      if (currentOrder.length === 0) return alert('Por favor, agrega al menos un producto a tu orden.');
-
-      // 1. Enviar el pedido a la base de datos (entrará a cocina)
-      const pedido = {
-        cliente: nombre + " (Página Web)",
-        items: currentOrder,
-        estado: 'En Cocina',
-        metodo: 'Transferencia',
-        total: parseFloat(total)
-      };
-
-      try {
-        await fetch('/api/pedidos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(pedido)
+        // Cargar menú
+        fetch('/api/menu').then(r => r.json()).then(menu => {
+            let html = "";
+            for (let categoria in menu) {
+                html += `<h3 class="categoria-titulo">${categoria}</h3>`;
+                menu[categoria].forEach(prod => {
+                    // Limpiamos espacios para el ID del input
+                    let idInput = prod.nombre.replace(/\s+/g, ''); 
+                    
+                    html += `
+                    <div class="producto-card">
+                        <div class="producto-header">
+                            <span class="producto-nombre">${prod.nombre}</span>
+                            <span class="producto-precio">$${prod.precio}</span>
+                        </div>
+                        <div class="producto-desc">${prod.descripcion || ''}</div>
+                        
+                        <div class="controles-agregar">
+                            <input type="text" id="nota-${idInput}" class="input-comentario" placeholder="Ej. Sin cebolla, extra mayo...">
+                            <button class="btn-agregar" onclick="agregarAlCarrito('${prod.nombre}', ${prod.precio}, '${idInput}')">Añadir al Carrito</button>
+                        </div>
+                    </div>`;
+                });
+            }
+            document.getElementById('contenedor-menu').innerHTML = html;
         });
-      } catch(e) {
-        console.error("No se pudo guardar en BD, pero se enviará el WhatsApp");
-      }
 
-      // 2. Armar el resumen para el WhatsApp
-      let detalles = currentOrder.map(i => `${i.cantidad}x ${i.nombre}`).join('%0A- ');
-      
-      let texto = `👑 *Hola La Queen, soy ${nombre}* %0A%0A`;
-      texto += `Acabo de realizar mi pedido en línea:%0A- ${detalles}%0A%0A`;
-      texto += `*Total a pagar: $${total}*%0A%0A`;
-      texto += `Aquí les envío mi comprobante de transferencia. ¡Gracias!`;
+        // Cargar tarjeta configurada en caja
+        fetch('/api/config/tarjeta').then(r => r.json()).then(data => {
+            document.getElementById('numero-tarjeta').innerText = data.numero;
+        });
 
-      // 3. Redirigir al cliente a WhatsApp
-      const url = `https://wa.me/${numeroWhatsApp}?text=${texto}`;
-      window.location.href = url;
-    }
+        function agregarAlCarrito(nombre, precio, idInput) {
+            let comentario = document.getElementById(`nota-${idInput}`).value;
+            
+            let itemExistente = carrito.find(i => i.nombre === nombre && i.comentario === comentario);
+            if (itemExistente) {
+                itemExistente.cantidad++;
+            } else {
+                carrito.push({ nombre, precio, cantidad: 1, comentario });
+            }
+            
+            document.getElementById(`nota-${idInput}`).value = ""; // Limpiar input
+            actualizarCarrito();
+            
+            // Efecto visual rápido
+            let btn = event.target;
+            let textoOriginal = btn.innerText;
+            btn.innerText = "¡Agregado! ✔️";
+            btn.style.background = "#8bc34a";
+            setTimeout(() => { btn.innerText = textoOriginal; btn.style.background = "#ff9800"; }, 1000);
+        }
 
-    init();
-  </script>
+        function actualizarCarrito() {
+            let total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            let cantidad = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+            
+            document.getElementById('total-flotante').innerText = total.toFixed(2);
+            document.getElementById('total-carrito').innerText = total.toFixed(2);
+            document.getElementById('contador-carrito').innerText = cantidad;
+
+            let htmlCarrito = "";
+            carrito.forEach((item, index) => {
+                htmlCarrito += `
+                <div class="item-carrito">
+                    <strong>${item.cantidad}x ${item.nombre}</strong> - $${item.precio * item.cantidad}
+                    ${item.comentario ? `<span class="item-nota">Nota: ${item.comentario}</span>` : ''}
+                    <button class="btn-eliminar" onclick="eliminarDelCarrito(${index})">X</button>
+                </div>`;
+            });
+            document.getElementById('lista-carrito').innerHTML = htmlCarrito || "<p style='text-align:center; color:#aaa;'>El carrito está vacío</p>";
+        }
+
+        function eliminarDelCarrito(index) {
+            carrito.splice(index, 1);
+            actualizarCarrito();
+        }
+
+        function abrirCarrito() { document.getElementById('modal-carrito').style.display = 'flex'; }
+        function cerrarCarrito() { document.getElementById('modal-carrito').style.display = 'none'; }
+
+        function verificarMetodoPago() {
+            let metodo = document.getElementById('metodo-pago').value;
+            let divTransferencia = document.getElementById('info-transferencia');
+            if (metodo === 'Transferencia') {
+                divTransferencia.style.display = 'block';
+            } else {
+                divTransferencia.style.display = 'none';
+                fotoBase64 = null; // Limpiar foto si cambia a efectivo
+                document.getElementById('estado-foto').innerText = 'Ninguna foto seleccionada';
+                document.getElementById('input-foto').value = "";
+            }
+        }
+
+        // Convertir foto a código para enviarla a Firebase
+        function procesarFoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fotoBase64 = e.target.result;
+                document.getElementById('estado-foto').innerText = '✅ Imagen lista para enviar';
+                document.getElementById('estado-foto').style.color = '#8bc34a';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function enviarPedido() {
+            if (carrito.length === 0) return alert("Tu carrito está vacío.");
+            let nombre = document.getElementById('nombre-cliente').value;
+            if (!nombre) return alert("Por favor ingresa tu nombre.");
+            let metodo = document.getElementById('metodo-pago').value;
+
+            if (metodo === 'Transferencia' && !fotoBase64) {
+                return alert("Por favor sube la captura de pantalla de tu transferencia para verificar el pago.");
+            }
+
+            let total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            let pedido = {
+                cliente: nombre,
+                items: carrito,
+                total: total,
+                estado: "Pendiente",
+                metodoPagoInicial: metodo,
+                comprobanteAdjunto: fotoBase64 // Se envía la foto (o null si es efectivo)
+            };
+
+            // Mostrar estado de carga (porque subir foto pesa un poco)
+            let btnConfirmar = document.querySelector('.btn-confirmar');
+            btnConfirmar.innerText = "⏳ Enviando pedido...";
+            btnConfirmar.disabled = true;
+
+            fetch('/api/pedidos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pedido)
+            }).then(r => r.json()).then(res => {
+                if (res.success) {
+                    alert("✅ ¡Tu pedido ha sido enviado a la cocina de La Queen!");
+                    carrito = [];
+                    actualizarCarrito();
+                    cerrarCarrito();
+                    document.getElementById('nombre-cliente').value = '';
+                    fotoBase64 = null;
+                    document.getElementById('estado-foto').innerText = 'Ninguna foto seleccionada';
+                    document.getElementById('input-foto').value = "";
+                    btnConfirmar.innerText = "🚀 Enviar Pedido a Cocina";
+                    btnConfirmar.disabled = false;
+                }
+            }).catch(e => {
+                alert("Hubo un error al enviar tu pedido. Intenta nuevamente.");
+                btnConfirmar.innerText = "🚀 Enviar Pedido a Cocina";
+                btnConfirmar.disabled = false;
+            });
+        }
+    </script>
 </body>
 </html>

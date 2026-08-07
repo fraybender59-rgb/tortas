@@ -2,7 +2,7 @@ const express = require('express');
 const admin = require('firebase-admin');
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Aumentamos el límite para permitir subir fotos
 
 if (!admin.apps.length) {
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -13,84 +13,77 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// 👇 AQUÍ ESTÁ TU MENÚ COMPLETO BASADO EN TUS IMÁGENES 👇
+// 👇 MENÚ CON DESCRIPCIONES (INGREDIENTES) EXTRAÍDAS DE TUS FOTOS 👇
 const menuBase = {
   "Sencillas": [
-    {"nombre": "Milanesa", "precio": 75},
-    {"nombre": "Pierna", "precio": 75},
-    {"nombre": "Salchicha", "precio": 75},
-    {"nombre": "Jamón", "precio": 75},
-    {"nombre": "Huevo", "precio": 75},
-    {"nombre": "Chuleta", "precio": 75},
-    {"nombre": "Q. Puerco", "precio": 75}
+    {"nombre": "Milanesa", "precio": 75, "descripcion": "Un ingrediente a escoger. Complemento: jitomate, aguacate, mayonesa; rajas o chipotle."},
+    {"nombre": "Pierna", "precio": 75, "descripcion": "Un ingrediente a escoger. Complemento: jitomate, aguacate, mayonesa; rajas o chipotle."},
+    {"nombre": "Salchicha", "precio": 75, "descripcion": "Un ingrediente a escoger. Complemento: jitomate, aguacate, mayonesa; rajas o chipotle."},
+    {"nombre": "Jamón", "precio": 75, "descripcion": "Un ingrediente a escoger. Complemento: jitomate, aguacate, mayonesa; rajas o chipotle."},
+    {"nombre": "Huevo", "precio": 75, "descripcion": "Un ingrediente a escoger. Complemento: jitomate, aguacate, mayonesa; rajas o chipotle."},
+    {"nombre": "Chuleta", "precio": 75, "descripcion": "Un ingrediente a escoger. Complemento: jitomate, aguacate, mayonesa; rajas o chipotle."},
+    {"nombre": "Q. Puerco", "precio": 75, "descripcion": "Un ingrediente a escoger. Complemento: jitomate, aguacate, mayonesa; rajas o chipotle."}
   ],
   "Clásicas": [
-    {"nombre": "Verónica", "precio": 80},
-    {"nombre": "Tatiana", "precio": 80},
-    {"nombre": "Mexiquense", "precio": 80},
-    {"nombre": "Alemana", "precio": 80},
-    {"nombre": "Texana", "precio": 80},
-    {"nombre": "Pachuqueña", "precio": 80},
-    {"nombre": "Española", "precio": 80},
-    {"nombre": "Argentina", "precio": 80},
-    {"nombre": "Tabasqueña", "precio": 80},
-    {"nombre": "Jarocha", "precio": 80},
-    {"nombre": "Veracruzana", "precio": 80}
+    {"nombre": "Verónica", "precio": 80, "descripcion": "Milanesa, Salchicha, Q. Oaxaca."},
+    {"nombre": "Tatiana", "precio": 80, "descripcion": "Milanesa, Pierna, Q. Oaxaca."},
+    {"nombre": "Mexiquense", "precio": 80, "descripcion": "Milanesa, Chorizo, Q. Oaxaca."},
+    {"nombre": "Alemana", "precio": 80, "descripcion": "Milanesa, Piña, Q. Oaxaca."},
+    {"nombre": "Texana", "precio": 80, "descripcion": "Milanesa, Chuleta, Q. Oaxaca."},
+    {"nombre": "Pachuqueña", "precio": 80, "descripcion": "Milanesa, Pierna, Piña."},
+    {"nombre": "Española", "precio": 80, "descripcion": "Milanesa, Pierna, Huevo."},
+    {"nombre": "Argentina", "precio": 80, "descripcion": "Milanesa, Q. Amarillo, Q. Oaxaca."},
+    {"nombre": "Tabasqueña", "precio": 80, "descripcion": "Milanesa, Huevo, Q. Oaxaca."},
+    {"nombre": "Jarocha", "precio": 80, "descripcion": "Milanesa, Q. Puerco, Q. Blanco."},
+    {"nombre": "Veracruzana", "precio": 80, "descripcion": "Milanesa, Salchicha, Q. Puerco."}
   ],
   "Combinadas": [
-    {"nombre": "Trailera", "precio": 80},
-    {"nombre": "Toluqueña", "precio": 80},
-    {"nombre": "Italiana", "precio": 80},
-    {"nombre": "Suiza", "precio": 80},
-    {"nombre": "Michoacana", "precio": 80},
-    {"nombre": "Poblana", "precio": 80},
-    {"nombre": "Lambada", "precio": 80},
-    {"nombre": "Holandesa", "precio": 80},
-    {"nombre": "Rusa", "precio": 80},
-    {"nombre": "Brasileña", "precio": 80},
-    {"nombre": "Francesa", "precio": 80},
-    {"nombre": "Alejandra", "precio": 80},
-    {"nombre": "Hawaiana", "precio": 80},
-    {"nombre": "Oaxaqueña", "precio": 80}
+    {"nombre": "Trailera", "precio": 80, "descripcion": "Salchicha, Pierna, Q. Oaxaca."},
+    {"nombre": "Toluqueña", "precio": 80, "descripcion": "Salchicha, Chorizo, Q. Oaxaca."},
+    {"nombre": "Italiana", "precio": 80, "descripcion": "Jamón, Q. Amarillo, Q. Oaxaca."},
+    {"nombre": "Suiza", "precio": 80, "descripcion": "Q. Amarillo, Q. Oaxaca, Q. Blanco."},
+    {"nombre": "Michoacana", "precio": 80, "descripcion": "Salchicha, Jamón, Q. Oaxaca."},
+    {"nombre": "Poblana", "precio": 80, "descripcion": "Salchicha, Huevo, Chorizo."},
+    {"nombre": "Lambada", "precio": 80, "descripcion": "Pierna, Huevo, Chorizo."},
+    {"nombre": "Holandesa", "precio": 80, "descripcion": "Salchicha, Q. Puerco, Jamón."},
+    {"nombre": "Rusa", "precio": 80, "descripcion": "Huevo, Jamón, Q. Oaxaca."},
+    {"nombre": "Brasileña", "precio": 80, "descripcion": "Huevo, Salchicha, Q. Oaxaca."},
+    {"nombre": "Francesa", "precio": 80, "descripcion": "Pierna, Q. Amarillo, Q. Oaxaca."},
+    {"nombre": "Alejandra", "precio": 80, "descripcion": "Pierna, Piña, Q. Oaxaca."},
+    {"nombre": "Hawaiana", "precio": 80, "descripcion": "Jamón, Piña, Q. Oaxaca."},
+    {"nombre": "Oaxaqueña", "precio": 80, "descripcion": "Pierna, Huevo, Q. Oaxaca."}
   ],
   "Especiales": [
-    {"nombre": "Especial", "precio": 85},
-    {"nombre": "Diabla", "precio": 85},
-    {"nombre": "Manterola", "precio": 85},
-    {"nombre": "Pecaminosa", "precio": 85}
+    {"nombre": "Especial", "precio": 85, "descripcion": "Milanesa, Pierna, Piña, Q. Oaxaca."},
+    {"nombre": "Diabla", "precio": 85, "descripcion": "Milanesa, Chorizo, Piña, Q. Oaxaca."},
+    {"nombre": "Manterola", "precio": 85, "descripcion": "Milanesa, Pierna, Chuleta, Q. Oaxaca."},
+    {"nombre": "Pecaminosa", "precio": 85, "descripcion": "Milanesa, Huevo, Salchicha, Q. de Puerco."}
   ],
   "El Tamaño Si Importa": [
-    {"nombre": "Insaciable", "precio": 90},
-    {"nombre": "Vanidosa", "precio": 90},
-    {"nombre": "Caprichosa", "precio": 90},
-    {"nombre": "Niña Pobre", "precio": 90},
-    {"nombre": "Bomba", "precio": 90},
-    {"nombre": "Suspiro de Monja", "precio": 90},
-    {"nombre": "Cubana", "precio": 135}
+    {"nombre": "Insaciable", "precio": 90, "descripcion": "Milanesa, Pierna, Salchicha, Chuleta, Q. Oaxaca."},
+    {"nombre": "Vanidosa", "precio": 90, "descripcion": "Milanesa, Pierna, Chorizo, Piña, Q. Oaxaca."},
+    {"nombre": "Caprichosa", "precio": 90, "descripcion": "Milanesa, Chorizo, Jamón, Salchicha, Q. Oaxaca."},
+    {"nombre": "Niña Pobre", "precio": 90, "descripcion": "Milanesa, Huevo, Chorizo, Chuleta, Q. Oaxaca."},
+    {"nombre": "Bomba", "precio": 90, "descripcion": "Milanesa, Huevo, Chorizo, Salchicha, Q. Oaxaca."},
+    {"nombre": "Suspiro de Monja", "precio": 90, "descripcion": "Milanesa, Pierna, Chorizo, Huevo, Q. Oaxaca."},
+    {"nombre": "Cubana", "precio": 135, "descripcion": "Todos los ingredientes. 1.100kg de sabor."}
   ],
   "Extras y Bebidas": [
-    {"nombre": "Ingrediente Extra", "precio": 5},
-    {"nombre": "Coca Cola", "precio": 25},
-    {"nombre": "Agua Embotellada", "precio": 20}
+    {"nombre": "Ingrediente Extra", "precio": 5, "descripcion": "Añade un toque extra a tu torta."},
+    {"nombre": "Coca Cola", "precio": 25, "descripcion": "Refresco bien frío."},
+    {"nombre": "Agua Embotellada", "precio": 20, "descripcion": "Botella de agua natural."}
   ]
 };
 
-// 👇 INVENTARIO INICIAL (Arrancamos todo con 50 unidades) 👇
+// Inventario base (se mantiene igual)
 const invBase = { 
-  // Sencillas
   "Milanesa": 50, "Pierna": 50, "Salchicha": 50, "Jamón": 50, "Huevo": 50, "Chuleta": 50, "Q. Puerco": 50,
-  // Clásicas
   "Verónica": 50, "Tatiana": 50, "Mexiquense": 50, "Alemana": 50, "Texana": 50, "Pachuqueña": 50, "Española": 50, "Argentina": 50, "Tabasqueña": 50, "Jarocha": 50, "Veracruzana": 50,
-  // Combinadas
   "Trailera": 50, "Toluqueña": 50, "Italiana": 50, "Suiza": 50, "Michoacana": 50, "Poblana": 50, "Lambada": 50, "Holandesa": 50, "Rusa": 50, "Brasileña": 50, "Francesa": 50, "Alejandra": 50, "Hawaiana": 50, "Oaxaqueña": 50,
-  // Especiales
   "Especial": 50, "Diabla": 50, "Manterola": 50, "Pecaminosa": 50,
-  // Gigantes
   "Insaciable": 50, "Vanidosa": 50, "Caprichosa": 50, "Niña Pobre": 50, "Bomba": 50, "Suspiro de Monja": 50, "Cubana": 50,
-  // Extras
   "Ingrediente Extra": 50, "Coca Cola": 50, "Agua Embotellada": 50
 };
-
 
 app.get('/api/menu', async (req, res) => {
   try {
@@ -112,10 +105,32 @@ app.get('/api/pedidos', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// 🔥 AQUÍ MODIFICAMOS PARA RECIBIR LA FOTO DEL CLIENTE 🔥
 app.post('/api/pedidos', async (req, res) => {
   try {
-    const nuevoPedido = { ...req.body, fecha: new Date().toISOString() };
+    // Separamos el comprobante del resto de los datos del pedido
+    const { comprobanteAdjunto, ...datosPedido } = req.body;
+    
+    // Si el cliente mandó comprobante, le ponemos un aviso (bandera) al pedido para la caja
+    const nuevoPedido = { 
+        ...datosPedido, 
+        fecha: new Date().toISOString(),
+        tieneFoto: comprobanteAdjunto ? true : false 
+    };
+    
+    // Guardamos el pedido
     const docRef = await db.collection('pedidos').add(nuevoPedido);
+
+    // Si mandó foto, la guardamos en la galería de comprobantes que hicimos ayer
+    if (comprobanteAdjunto) {
+        await db.collection('comprobantes').add({
+            pedidoId: docRef.id,
+            fecha: nuevoPedido.fecha.split('T')[0], // Se guarda con la fecha de hoy YYYY-MM-DD
+            imagen: comprobanteAdjunto,
+            creadoEn: nuevoPedido.fecha
+        });
+    }
+
     res.json({ success: true, id: docRef.id });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -126,7 +141,6 @@ app.patch('/api/pedidos/:id', async (req, res) => {
     const cambios = req.body;
     await db.collection('pedidos').doc(id).update(cambios);
 
-    // Si se cobra, restamos del almacén
     if (cambios.estado === 'Cobrado') {
       const pedidoDoc = await db.collection('pedidos').doc(id).get();
       const pedido = pedidoDoc.data();
@@ -167,59 +181,40 @@ app.post('/api/inventario/modificar', async (req, res) => {
         let inventario = doc.data();
         let cantNum = parseInt(cantidad);
         
-        if (operacion === 'sumar') {
-            inventario[nombre] += cantNum;
-        } else if (operacion === 'restar') {
+        if (operacion === 'sumar') { inventario[nombre] += cantNum; } 
+        else if (operacion === 'restar') {
             inventario[nombre] -= cantNum;
             if(inventario[nombre] < 0) inventario[nombre] = 0;
         }
-        
         await invRef.set(inventario, { merge: true });
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 🔥 RUTA PARA ACTUALIZAR PRECIOS DEL MENÚ
 app.post('/api/menu/precio', async (req, res) => {
   try {
     const { categoria, nombre, nuevoPrecio } = req.body;
     const menuRef = db.collection('config').doc('menu_la_queen');
     const doc = await menuRef.get();
-    
     if (!doc.exists) return res.status(404).json({ error: 'Menú no encontrado' });
-    
     let menu = doc.data();
     if (menu[categoria]) {
         let producto = menu[categoria].find(p => p.nombre === nombre);
-        if (producto) {
-            producto.precio = parseFloat(nuevoPrecio); // Actualizamos el valor real en Firebase
-        }
+        if (producto) producto.precio = parseFloat(nuevoPrecio);
     }
-    
     await menuRef.set(menu);
     res.json({ success: true });
-  } catch (e) { 
-    res.status(500).json({ error: e.message }); 
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-
-// 👇=========================================👇
-// 🔥 NUEVAS RUTAS PARA LA TARJETA BANCARIA 🔥
-// 👇=========================================👇
-
-// Obtener el número de tarjeta actual
 app.get('/api/config/tarjeta', async (req, res) => {
   try {
     const doc = await db.collection('config').doc('tarjeta_la_queen').get();
-    if (!doc.exists) {
-      return res.json({ numero: "1234 5678 9012 3456" }); // Número por defecto si aún no guardas uno
-    }
+    if (!doc.exists) return res.json({ numero: "1234 5678 9012 3456" });
     res.json(doc.data());
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Guardar un nuevo número de tarjeta
 app.post('/api/config/tarjeta', async (req, res) => {
   try {
     const { numero } = req.body;
@@ -228,43 +223,22 @@ app.post('/api/config/tarjeta', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-
-// 👇=========================================👇
-// 🔥 NUEVAS RUTAS PARA COMPROBANTES DE PAGO 🔥
-// 👇=========================================👇
-
-// Obtener las fotos de una fecha específica
 app.get('/api/comprobantes', async (req, res) => {
   try {
-    const { fecha } = req.query; // Esperamos un formato YYYY-MM-DD
+    const { fecha } = req.query;
     if (!fecha) return res.status(400).json({ error: 'Falta la fecha' });
-
-    const snapshot = await db.collection('comprobantes')
-                             .where('fecha', '==', fecha)
-                             .get();
-
+    const snapshot = await db.collection('comprobantes').where('fecha', '==', fecha).get();
     const fotos = [];
-    snapshot.forEach(doc => {
-      fotos.push(doc.data().imagen);
-    });
-
+    snapshot.forEach(doc => fotos.push(doc.data().imagen));
     res.json(fotos);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Subir una nueva foto de transferencia
 app.post('/api/comprobantes', async (req, res) => {
   try {
     const { fecha, imagen } = req.body;
     if (!fecha || !imagen) return res.status(400).json({ error: 'Faltan datos' });
-
-    // Guardamos la imagen en Base64 en una nueva colección llamada "comprobantes"
-    await db.collection('comprobantes').add({
-      fecha: fecha,
-      imagen: imagen,
-      creadoEn: new Date().toISOString()
-    });
-
+    await db.collection('comprobantes').add({ fecha: fecha, imagen: imagen, creadoEn: new Date().toISOString() });
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
