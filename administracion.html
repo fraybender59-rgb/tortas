@@ -83,6 +83,10 @@
         <div class="modal-content">
             <h3 style="color:#d97706; text-align:center;">💰 Resumen de Ventas y Corte</h3>
             <p style="text-align: center; color: #aaa;">Aquí irá el resumen de ventas del día actual.</p>
+            
+            <!-- NUEVO BOTÓN DE CORTE FINAL -->
+            <button class="btn-modal btn-ok" style="width: 100%; margin-bottom: 10px; background: #e11d48; color: white;" onclick="realizarCorte()">🛑 REALIZAR CORTE FINAL DEL DÍA</button>
+
             <button class="btn-modal btn-cancel" style="width: 100%;" onclick="document.getElementById('modal-cortes').style.display='none'">Cerrar Corte</button>
         </div>
     </div>
@@ -375,6 +379,29 @@
             fetch('/api/pedidos/' + idSeleccionado, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) })
             .then(() => { document.getElementById('modal-accion').style.display = 'none'; renderAdmin(); });
         }
+
+        /* ========================
+           NUEVA FUNCIÓN DE CORTE
+        ======================== */
+        window.realizarCorte = function() {
+            let pass = prompt("Atención: Ingrese clave maestra para realizar el corte final del día:");
+            if (pass !== claveSeguridad) return alert("Clave incorrecta. Acción denegada.");
+
+            if (confirm("¿Estás seguro de que deseas realizar el corte final del día? Esto procesará las ventas actuales.")) {
+                fetch('/api/corte', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                }).then(() => {
+                    alert("✅ Corte final del día realizado con éxito.");
+                    document.getElementById('modal-cortes').style.display = 'none';
+                    renderAdmin();
+                }).catch(e => {
+                    alert("La petición de corte fue enviada. (Verifica tu servidor backend para asegurar que la ruta '/api/corte' esté configurada).");
+                    document.getElementById('modal-cortes').style.display = 'none';
+                });
+            }
+        };
+
         setInterval(renderAdmin, 3000);
         renderAdmin();
     </script>
