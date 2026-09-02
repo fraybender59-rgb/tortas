@@ -5,24 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Caja Maestro - Administración</title>
     <style>
+        * { box-sizing: border-box; }
         body { background-color: #121216; color: #f5f5f7; font-family: monospace; margin: 0; padding: 15px; }
         
-        /* Barra de Navegación Actualizada */
+        /* Barra de Navegación */
         .barra-nav { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; background: #1e1e24; padding: 10px; border-radius: 8px; border: 1px solid #333; }
-        .btn-nav { color: #fff; padding: 10px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; cursor: pointer; border: 1px solid #555; display: inline-block;}
-        
-        /* Colores basados en tu imagen de referencia */
-        .btn-comandero-pub { background: #2d3748; } /* Gris oscuro */
-        .btn-comandero-caja { background: #4a5568; } /* Gris más claro */
-        .btn-ventas { background: #d97706; } /* Naranja/Amarillo */
-        .btn-cobradas { background: #9333ea; } /* Morado */
-        .btn-historial-dias { background: #0d9488; } /* Verde/Teal */
-        .btn-comprobantes { background: #e11d48; } /* Rosa/Rojo */
+        .btn-nav { color: #fff; padding: 10px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; cursor: pointer; border: 1px solid #555; display: inline-block; }
+        .btn-comandero-pub { background: #2d3748; }
+        .btn-comandero-caja { background: #4a5568; }
+        .btn-ventas { background: #d97706; }
+        .btn-cobradas { background: #9333ea; }
+        .btn-historial-dias { background: #0d9488; }
+        .btn-comprobantes { background: #e11d48; }
         .btn-precios { background: #ff5722; border: none; }
         .btn-tarjeta-conf { background: #3f51b5; border: none; }
         
-        .columna { background: #18181f; padding: 15px; border-radius: 10px; border: 1px solid #2a2a35; max-width: 600px; margin: 0 auto; }
+        .columna { background: #18181f; padding: 15px; border-radius: 10px; border: 1px solid #2a2a35; max-width: 700px; margin: 0 auto; }
         .titulo-columna { text-align: center; color: #ffb74d; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        
+        /* Pestañas */
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; justify-content: center; flex-wrap: wrap; }
+        .tab-btn { background: #2a2a35; color: #aaa; border: 1px solid #444; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: monospace; }
+        .tab-btn:hover { background: #333; }
+        .tab-btn.activa { background: #ff9800; color: #111; border-color: #ff9800; }
+        .tab-contenido { display: none; }
+        .tab-contenido.activo { display: block; }
+        
         .tarjeta-pedido { background: #222; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 5px solid #8bc34a; }
         .tarjeta-pedido.cancelado { border-left-color: #f44336; opacity: 0.7; }
         .tarjeta-pedido.cobrado { border-left-color: #9c27b0; opacity: 0.8; }
@@ -35,177 +43,357 @@
         .btn-cancelar { background: #f44336; color: #fff; grid-column: span 2; }
         
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: flex-start; padding-top: 50px; overflow-y: auto; }
-        .modal-content { background: #2a2a35; padding: 20px; border-radius: 10px; width: 90%; max-width: 600px; border: 1px solid #ff9800; margin-bottom: 50px; }
+        .modal-content { background: #2a2a35; padding: 20px; border-radius: 10px; width: 90%; max-width: 700px; border: 1px solid #ff9800; margin-bottom: 50px; }
         .btn-modal { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 48%; margin-top: 10px; }
         .btn-ok { background: #8bc34a; color: #111; }
         .btn-cancel { background: #f44336; color: #fff; }
-
-        /* Estilos para galería de comprobantes */
+        
         .galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; max-height: 40vh; overflow-y: auto; background: #111; padding: 10px; border-radius: 5px; border: 1px solid #444; margin-top: 15px; }
         .galeria img { width: 100%; height: 120px; object-fit: cover; border-radius: 5px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
         .galeria img:hover { border-color: #8bc34a; transform: scale(1.05); }
+        
+        .historial-tabla { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .historial-tabla th { background: #333; color: #ff9800; padding: 10px; text-align: center; border: 1px solid #444; }
+        .historial-tabla td { padding: 8px; text-align: center; border: 1px solid #444; }
+        .historial-tabla tr:nth-child(even) { background: #1a1a22; }
+        .historial-tabla tr:hover { background: #2a2a35; }
+        .total-dia { color: #8bc34a; font-weight: bold; }
+        .fecha-dia { color: #ffb74d; }
+        
+        .badge-origen { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
+        .badge-cliente { background: #3f51b5; color: #fff; }
+        .badge-staff { background: #d97706; color: #fff; }
+        
+        .sin-datos { color: #666; text-align: center; padding: 20px; }
     </style>
 </head>
 <body>
-    <div class="barra-nav">
-        <!-- CORRECCIÓN: Comandero Público -> clientes.html, Comandero Staff -> comandero.html -->
-        <a href="clientes.html" target="_blank" class="btn-nav btn-comandero-pub">📱 Comandero Público (Clientes)</a>
-        <a href="comandero.html" target="_blank" class="btn-nav btn-comandero-caja">📝 Comandero Staff (Cocina)</a>
-        <button onclick="document.getElementById('modal-cortes').style.display='flex';" class="btn-nav btn-ventas">💰 Ver Ventas / Corte</button>
-        <button onclick="document.getElementById('modal-historial').style.display='flex';" class="btn-nav btn-cobradas">📁 Cobradas Hoy</button>
-        <button onclick="document.getElementById('modal-historial-dias').style.display='flex';" class="btn-nav btn-historial-dias">📅 Historial de Días</button>
-        <button onclick="abrirModalComprobantes()" class="btn-nav btn-comprobantes">📸 Ver Comprobantes</button>
-        
-        <!-- Botones que se mantuvieron por tu instrucción -->
-        <button onclick="abrirModalPrecios()" class="btn-nav btn-precios">✏️ Precios</button>
-        <button onclick="abrirModalTarjeta()" class="btn-nav btn-tarjeta-conf">💳 Config Tarjeta</button>
+
+    <!-- PASSWORD PROTECTION -->
+    <div id="bloqueo" style="display:flex; justify-content:center; align-items:center; min-height:100vh; flex-direction:column; gap:20px; background:#121216; position:fixed; inset:0; z-index:9999;">
+        <h1 style="color:#ff9800;">🔐 Acceso Restringido</h1>
+        <p style="color:#aaa;">Ingresa la contraseña de administrador</p>
+        <input type="password" id="input-pass" placeholder="Contraseña" style="padding:12px 20px; border-radius:8px; border:2px solid #444; background:#222; color:#fff; font-size:1.2rem; width:280px; text-align:center;" onkeydown="if(event.key==='Enter') verificarPass()">
+        <button onclick="verificarPass()" style="padding:12px 40px; background:#ff9800; color:#111; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer;">Acceder</button>
+        <div id="error-pass" style="color:#f44336; font-weight:bold; display:none;">❌ Contraseña incorrecta</div>
     </div>
 
-    <div class="columna">
-        <h2 class="titulo-columna">📝 Caja Principal (Pedidos Activos)</h2>
-        <div id="bandeja-caja">Cargando...</div>
-    </div>
-
-    <!-- MODAL HISTORIAL (Cobradas Hoy) -->
-    <div id="modal-historial" class="modal-overlay">
-        <div class="modal-content">
-            <h3 style="color:#ff9800; text-align:center;">📁 Cobradas Hoy</h3>
-            <div id="total-ventas-historial" style="background: #111; color: #8bc34a; font-size: 1.5rem; text-align: center; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #8bc34a;">
-                Total Vendido: $0.00
-            </div>
-            <div id="bandeja-historial" style="max-height: 50vh; overflow-y: auto;"></div>
-            <button class="btn-modal btn-cancel" style="width: 100%;" onclick="document.getElementById('modal-historial').style.display='none'">Cerrar Lista</button>
+    <!-- CONTENIDO PRINCIPAL (oculto hasta validar) -->
+    <div id="contenido-admin" style="display:none;">
+        <div class="barra-nav">
+            <a href="clientes.html" target="_blank" class="btn-nav btn-comandero-pub">📱 Comandero Público (Clientes)</a>
+            <a href="comandero.html" target="_blank" class="btn-nav btn-comandero-caja">📝 Comandero Staff (Cocina)</a>
+            <button onclick="document.getElementById('modal-cortes').style.display='flex';" class="btn-nav btn-ventas">💰 Ver Ventas / Corte</button>
+            <button onclick="document.getElementById('modal-historial').style.display='flex';" class="btn-nav btn-cobradas">📁 Cobradas Hoy</button>
+            <button onclick="abrirHistorialDias()" class="btn-nav btn-historial-dias">📅 Historial de Días</button>
+            <button onclick="abrirModalComprobantes()" class="btn-nav btn-comprobantes">📸 Ver Comprobantes</button>
+            <button onclick="abrirModalPrecios()" class="btn-nav btn-precios">✏️ Precios</button>
+            <button onclick="abrirModalTarjeta()" class="btn-nav btn-tarjeta-conf">💳 Config Tarjeta</button>
         </div>
-    </div>
 
-    <!-- MODAL VENTAS / CORTE (Estructura Base) -->
-    <div id="modal-cortes" class="modal-overlay">
-        <div class="modal-content">
-            <h3 style="color:#d97706; text-align:center;">💰 Resumen de Ventas y Corte</h3>
-            <p style="text-align: center; color: #aaa;">Aquí irá el resumen de ventas del día actual.</p>
+        <div class="columna">
+            <h2 class="titulo-columna">📝 Caja Principal</h2>
             
-            <!-- NUEVO BOTÓN DE CORTE FINAL -->
-            <button class="btn-modal btn-ok" style="width: 100%; margin-bottom: 10px; background: #e11d48; color: white;" onclick="realizarCorte()">🛑 REALIZAR CORTE FINAL DEL DÍA</button>
-
-            <button class="btn-modal btn-cancel" style="width: 100%;" onclick="document.getElementById('modal-cortes').style.display='none'">Cerrar Corte</button>
-        </div>
-    </div>
-
-    <!-- MODAL HISTORIAL DE DÍAS (Estructura Base) -->
-    <div id="modal-historial-dias" class="modal-overlay">
-        <div class="modal-content">
-            <h3 style="color:#0d9488; text-align:center;">📅 Historial de Días Anteriores</h3>
-            <input type="date" style="width:95%; padding:10px; background:#111; color:white; border:1px solid #444; border-radius:5px; margin-bottom: 15px;">
-            <p style="text-align: center; color: #aaa;">Aquí se cargarán los pedidos del día seleccionado.</p>
-            <button class="btn-modal btn-cancel" style="width: 100%;" onclick="document.getElementById('modal-historial-dias').style.display='none'">Cerrar Historial</button>
-        </div>
-    </div>
-
-    <!-- MODAL PRECIOS -->
-    <div id="modal-precios" class="modal-overlay">
-        <div class="modal-content">
-            <h3 style="color:#ff9800; text-align:center;">✏️ Modificar Precios del Menú</h3>
-            <select id="select-cat" onchange="cargarProdsPrecio()" style="width:100%; padding:10px; background:#111; color:white; margin-bottom:10px; border-radius:5px;">
-                <option value="">-- Selecciona Categoría --</option>
-            </select>
-            <select id="select-prod" style="width:100%; padding:10px; background:#111; color:white; margin-bottom:10px; border-radius:5px;">
-                <option value="">-- Selecciona Producto --</option>
-            </select>
-            <input type="number" id="nuevo-precio" placeholder="Nuevo precio ($)" style="width:100%; padding:10px; background:#111; color:white; border-radius:5px; border:1px solid #444;">
-            
-            <div style="display: flex; justify-content: space-between; margin-top:15px;">
-                <button class="btn-modal btn-cancel" onclick="document.getElementById('modal-precios').style.display='none'">Cancelar</button>
-                <button class="btn-modal btn-ok" onclick="guardarPrecio()">Guardar Nuevo Precio</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL TARJETA BANCARIA -->
-    <div id="modal-tarjeta" class="modal-overlay">
-        <div class="modal-content">
-            <h3 style="color:#3f51b5; text-align:center;">💳 Modificar Tarjeta para Clientes</h3>
-            <p style="color: #aaa; text-align: center; font-size: 0.9em;">Este número aparecerá en la página donde los clientes hacen su pedido.</p>
-            <input type="text" id="nueva-tarjeta" placeholder="1234 5678 9012 3456" maxlength="19" style="width:100%; padding:15px; background:#111; color:#fff; border-radius:5px; border:1px solid #444; font-size: 1.5rem; text-align: center; letter-spacing: 2px; margin-top: 10px;">
-            
-            <div style="display: flex; justify-content: space-between; margin-top:20px;">
-                <button class="btn-modal btn-cancel" onclick="document.getElementById('modal-tarjeta').style.display='none'">Cancelar</button>
-                <button class="btn-modal btn-ok" onclick="guardarTarjeta()">Guardar Tarjeta</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL COMPROBANTES DE TRANSFERENCIA (Solo visualización) -->
-    <div id="modal-comprobantes" class="modal-overlay">
-        <div class="modal-content" style="max-width: 800px;">
-            <h3 style="color:#e11d48; text-align:center;">📸 Comprobantes de Transferencia</h3>
-            
-            <div style="display: flex; gap: 10px; margin-top: 15px; align-items: stretch;">
-                <input type="date" id="fecha-comprobantes" style="padding:10px; background:#111; color:white; border:1px solid #444; border-radius:5px; flex-grow: 1; font-size: 1.1rem;" onchange="cargarComprobantes()">
+            <!-- Pestañas -->
+            <div class="tabs">
+                <button class="tab-btn activa" data-tab="tab-clientes" onclick="cambiarTab('tab-clientes')">👤 Clientes</button>
+                <button class="tab-btn" data-tab="tab-staff" onclick="cambiarTab('tab-staff')">👨‍🍳 Staff (Cocina)</button>
             </div>
 
-            <div id="galeria-comprobantes" class="galeria">
-                <!-- Las imágenes se cargarán aquí -->
-                <p style="color:#666; grid-column: 1 / -1; text-align: center;">Selecciona una fecha para ver los comprobantes.</p>
+            <div id="tab-clientes" class="tab-contenido activo">
+                <div id="bandeja-clientes">Cargando...</div>
             </div>
-
-            <button class="btn-modal btn-cancel" style="width: 100%; margin-top:20px;" onclick="document.getElementById('modal-comprobantes').style.display='none'">Cerrar Galería</button>
+            <div id="tab-staff" class="tab-contenido">
+                <div id="bandeja-staff">Cargando...</div>
+            </div>
         </div>
-    </div>
 
-    <!-- VISOR DE IMAGEN AMPLIADA -->
-    <div id="visor-imagen" class="modal-overlay" style="z-index: 2000; align-items: center;" onclick="this.style.display='none'">
-        <img id="imagen-ampliada" src="" style="max-width: 95%; max-height: 95%; border: 3px solid #8bc34a; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.8);">
-        <p style="position: absolute; bottom: 20px; color: white; background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 20px;">Toca cualquier parte para cerrar</p>
-    </div>
+        <!-- MODALES (igual que antes pero mejorados) -->
+        <div id="modal-historial" class="modal-overlay">
+            <div class="modal-content">
+                <h3 style="color:#ff9800; text-align:center;">📁 Cobradas Hoy</h3>
+                <div id="total-ventas-historial" style="background: #111; color: #8bc34a; font-size: 1.5rem; text-align: center; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #8bc34a;">
+                    Total Vendido: $0.00
+                </div>
+                <div id="bandeja-historial" style="max-height: 50vh; overflow-y: auto;"></div>
+                <button class="btn-modal btn-cancel" style="width:100%;" onclick="document.getElementById('modal-historial').style.display='none'">Cerrar Lista</button>
+            </div>
+        </div>
 
-    <!-- MODAL ACCIONES PEDIDO -->
-    <div id="modal-accion" class="modal-overlay">
-        <div class="modal-content">
-            <h3 id="titulo-accion" style="color:#ff9800;">Acción</h3>
-            <div id="cuerpo-accion"></div>
-            <div style="display: flex; justify-content: space-between;">
-                <button class="btn-modal btn-cancel" onclick="document.getElementById('modal-accion').style.display='none'">Cancelar</button>
-                <button class="btn-modal btn-ok" id="btn-confirmar-accion">Confirmar</button>
+        <div id="modal-cortes" class="modal-overlay">
+            <div class="modal-content">
+                <h3 style="color:#d97706; text-align:center;">💰 Resumen de Ventas y Corte</h3>
+                <p style="text-align:center; color:#aaa;">Aquí irá el resumen de ventas del día actual.</p>
+                <button class="btn-modal btn-ok" style="width:100%; margin-bottom:10px; background:#e11d48; color:white;" onclick="realizarCorte()">🛑 REALIZAR CORTE FINAL DEL DÍA</button>
+                <button class="btn-modal btn-cancel" style="width:100%;" onclick="document.getElementById('modal-cortes').style.display='none'">Cerrar Corte</button>
+            </div>
+        </div>
+
+        <div id="modal-historial-dias" class="modal-overlay">
+            <div class="modal-content" style="max-width:800px;">
+                <h3 style="color:#0d9488; text-align:center;">📅 Historial de Días (últimos 30 días)</h3>
+                <div id="contenedor-historial-dias" style="max-height:60vh; overflow-y:auto; margin-top:15px;">
+                    <p style="color:#666; text-align:center;">Cargando historial...</p>
+                </div>
+                <button class="btn-modal btn-cancel" style="width:100%;" onclick="document.getElementById('modal-historial-dias').style.display='none'">Cerrar Historial</button>
+            </div>
+        </div>
+
+        <div id="modal-precios" class="modal-overlay">
+            <div class="modal-content">
+                <h3 style="color:#ff9800; text-align:center;">✏️ Modificar Precios del Menú</h3>
+                <select id="select-cat" onchange="cargarProdsPrecio()" style="width:100%; padding:10px; background:#111; color:white; margin-bottom:10px; border-radius:5px;">
+                    <option value="">-- Selecciona Categoría --</option>
+                </select>
+                <select id="select-prod" style="width:100%; padding:10px; background:#111; color:white; margin-bottom:10px; border-radius:5px;">
+                    <option value="">-- Selecciona Producto --</option>
+                </select>
+                <input type="number" id="nuevo-precio" placeholder="Nuevo precio ($)" style="width:100%; padding:10px; background:#111; color:white; border-radius:5px; border:1px solid #444;">
+                <div style="display:flex; justify-content:space-between; margin-top:15px;">
+                    <button class="btn-modal btn-cancel" onclick="document.getElementById('modal-precios').style.display='none'">Cancelar</button>
+                    <button class="btn-modal btn-ok" onclick="guardarPrecio()">Guardar Nuevo Precio</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-tarjeta" class="modal-overlay">
+            <div class="modal-content">
+                <h3 style="color:#3f51b5; text-align:center;">💳 Modificar Tarjeta para Clientes</h3>
+                <p style="color:#aaa; text-align:center; font-size:0.9em;">Este número aparecerá en la página donde los clientes hacen su pedido.</p>
+                <input type="text" id="nueva-tarjeta" placeholder="1234 5678 9012 3456" maxlength="19" style="width:100%; padding:15px; background:#111; color:#fff; border-radius:5px; border:1px solid #444; font-size:1.5rem; text-align:center; letter-spacing:2px; margin-top:10px;">
+                <div style="display:flex; justify-content:space-between; margin-top:20px;">
+                    <button class="btn-modal btn-cancel" onclick="document.getElementById('modal-tarjeta').style.display='none'">Cancelar</button>
+                    <button class="btn-modal btn-ok" onclick="guardarTarjeta()">Guardar Tarjeta</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-comprobantes" class="modal-overlay">
+            <div class="modal-content" style="max-width:800px;">
+                <h3 style="color:#e11d48; text-align:center;">📸 Comprobantes de Transferencia</h3>
+                <div style="display:flex; gap:10px; margin-top:15px; align-items:stretch;">
+                    <input type="date" id="fecha-comprobantes" style="padding:10px; background:#111; color:white; border:1px solid #444; border-radius:5px; flex-grow:1; font-size:1.1rem;" onchange="cargarComprobantes()">
+                </div>
+                <div id="galeria-comprobantes" class="galeria">
+                    <p style="color:#666; grid-column:1/-1; text-align:center;">Selecciona una fecha para ver los comprobantes.</p>
+                </div>
+                <button class="btn-modal btn-cancel" style="width:100%; margin-top:20px;" onclick="document.getElementById('modal-comprobantes').style.display='none'">Cerrar Galería</button>
+            </div>
+        </div>
+
+        <div id="visor-imagen" class="modal-overlay" style="z-index:2000; align-items:center;" onclick="this.style.display='none'">
+            <img id="imagen-ampliada" src="" style="max-width:95%; max-height:95%; border:3px solid #8bc34a; border-radius:10px; box-shadow:0 0 20px rgba(0,0,0,0.8);">
+            <p style="position:absolute; bottom:20px; color:white; background:rgba(0,0,0,0.7); padding:5px 15px; border-radius:20px;">Toca cualquier parte para cerrar</p>
+        </div>
+
+        <div id="modal-accion" class="modal-overlay">
+            <div class="modal-content">
+                <h3 id="titulo-accion" style="color:#ff9800;">Acción</h3>
+                <div id="cuerpo-accion"></div>
+                <div style="display:flex; justify-content:space-between;">
+                    <button class="btn-modal btn-cancel" onclick="document.getElementById('modal-accion').style.display='none'">Cancelar</button>
+                    <button class="btn-modal btn-ok" id="btn-confirmar-accion">Confirmar</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        const claveSeguridad = "IBARRITA"; 
+        // ===================== PASSWORD PROTECTION =====================
+        const CLAVE = "IBARRITA";
+
+        function verificarPass() {
+            const input = document.getElementById('input-pass');
+            const error = document.getElementById('error-pass');
+            if (input.value === CLAVE) {
+                sessionStorage.setItem('auth_admin', 'true');
+                document.getElementById('bloqueo').style.display = 'none';
+                document.getElementById('contenido-admin').style.display = 'block';
+                iniciarAdmin();
+            } else {
+                error.style.display = 'block';
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        // Verificar al cargar
+        (function() {
+            if (sessionStorage.getItem('auth_admin') === 'true') {
+                document.getElementById('bloqueo').style.display = 'none';
+                document.getElementById('contenido-admin').style.display = 'block';
+                iniciarAdmin();
+            } else {
+                document.getElementById('bloqueo').style.display = 'flex';
+                document.getElementById('contenido-admin').style.display = 'none';
+                document.getElementById('input-pass').focus();
+            }
+        })();
+
+        // ===================== VARIABLES GLOBALES =====================
         let pedidosLocales = [];
         let idSeleccionado = null;
         let menuGlobal = {};
+        let tabActiva = 'tab-clientes';
 
-        /* ========================
-           LÓGICA DE TARJETA
-        ======================== */
-        function abrirModalTarjeta() {
-            let pass = prompt("Ingrese clave maestra para modificar el número de cuenta:");
-            if (pass !== claveSeguridad) return alert("Clave incorrecta. Acción denegada.");
-
-            fetch('/api/config/tarjeta').then(r => r.json()).then(data => {
-                document.getElementById('nueva-tarjeta').value = data.numero || '';
-                document.getElementById('modal-tarjeta').style.display = 'flex';
-            }).catch(e => console.error("Error al obtener tarjeta"));
+        // ===================== INICIALIZAR =====================
+        function iniciarAdmin() {
+            renderAdmin();
+            setInterval(renderAdmin, 4000);
         }
 
-        function guardarTarjeta() {
-            let num = document.getElementById('nueva-tarjeta').value;
-            if(!num) return alert("Ingresa un número válido");
+        // ===================== CAMBIAR PESTAÑA =====================
+        function cambiarTab(tabId) {
+            tabActiva = tabId;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('activa'));
+            document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('activa');
+            document.querySelectorAll('.tab-contenido').forEach(c => c.classList.remove('activo'));
+            document.getElementById(tabId).classList.add('activo');
+            renderAdmin();
+        }
 
-            fetch('/api/config/tarjeta', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ numero: num })
+        // ===================== RENDER ADMIN =====================
+        function renderAdmin() {
+            fetch('/api/pedidos')
+                .then(r => r.json())
+                .then(pedidos => {
+                    pedidosLocales = pedidos;
+                    const clientes = pedidos.filter(p => p.origen === 'cliente' || p.metodoPagoInicial);
+                    const staff = pedidos.filter(p => !p.origen || p.origen === 'staff' || (!p.metodoPagoInicial && !p.origen));
+
+                    document.getElementById('bandeja-clientes').innerHTML = renderListaPedidos(clientes, 'cliente');
+                    document.getElementById('bandeja-staff').innerHTML = renderListaPedidos(staff, 'staff');
+
+                    // Historial de cobradas hoy (todas)
+                    let htmlHistorial = "";
+                    let totalVentas = 0;
+                    const hoy = new Date().toISOString().split('T')[0];
+                    const cobradasHoy = pedidos.filter(p => p.estado === 'Cobrado' && p.fecha && p.fecha.startsWith(hoy));
+                    cobradasHoy.forEach(p => {
+                        totalVentas += parseFloat(p.total) || 0;
+                        htmlHistorial += renderTarjetaPedido(p, true);
+                    });
+                    document.getElementById('bandeja-historial').innerHTML = htmlHistorial || '<p style="color:#666; text-align:center;">Sin cobros hoy</p>';
+                    document.getElementById('total-ventas-historial').innerText = `Suma Total de Ventas: $${totalVentas.toFixed(2)}`;
+                }).catch(e => console.error('Error renderizando:', e));
+        }
+
+        function renderListaPedidos(pedidos, origen) {
+            if (!pedidos || pedidos.length === 0) {
+                return '<p style="color:#666; text-align:center;">Sin pedidos de ' + (origen === 'cliente' ? 'clientes' : 'staff') + '</p>';
+            }
+            let html = '';
+            pedidos.slice().reverse().forEach(p => {
+                if (p.estado === 'Cobrado' || p.estado === 'Cancelado') return;
+                html += renderTarjetaPedido(p, false);
+            });
+            return html || '<p style="color:#666; text-align:center;">Sin pedidos activos</p>';
+        }
+
+        function renderTarjetaPedido(p, esHistorial) {
+            let estadoClase = p.estado === 'Cancelado' ? 'cancelado' : p.estado === 'Cobrado' ? 'cobrado' : '';
+            let badgeOrigen = p.origen === 'cliente' ? '<span class="badge-origen badge-cliente">👤 Cliente</span>' : '<span class="badge-origen badge-staff">👨‍🍳 Staff</span>';
+
+            let productosTexto = p.items.map(i =>
+                `<div style="margin-bottom:3px;">${i.cantidad}x ${i.nombre} ($${i.subtotal || (i.cantidad * i.precio)}) <br><span style="font-size:0.85em; color:#03a9f4;">${i.comentario ? '📝 Nota: ' + i.comentario : ''}</span></div>`
+            ).join('');
+
+            let infoExtra = "";
+            if (p.estado === 'Cobrado') {
+                infoExtra = `<div style="color:#8bc34a; font-weight:bold; margin-top:5px;">✅ Pagado en ${p.metodo}</div>`;
+            } else if (p.estado === 'Cancelado') {
+                infoExtra = `<div style="color:#f44336; font-weight:bold; margin-top:5px;">❌ ${p.motivo}</div>`;
+            }
+
+            let botones = "";
+            if (p.estado !== 'Cobrado' && p.estado !== 'Cancelado' && !esHistorial) {
+                botones = `
+                <div class="grid-botones">
+                    <button class="btn-act btn-pagado" onclick="cobrar('${p.id}', 'Efectivo')">💵 EFECTIVO</button>
+                    <button class="btn-act btn-tarjeta" onclick="cobrar('${p.id}', 'Tarjeta')">💳 TARJETA</button>
+                    <button class="btn-act btn-cortesia" onclick="accion('${p.id}', 'Cortesía')">🎁 Cortesía</button>
+                    <button class="btn-act btn-descuento" onclick="accion('${p.id}', 'Descuento')">🏷️ Descuento</button>
+                    <button class="btn-act btn-cancelar" onclick="accion('${p.id}', 'Cancelado')">❌ Cancelar</button>
+                </div>`;
+            }
+
+            return `
+            <div class="tarjeta-pedido ${estadoClase}">
+                <div><strong>${p.cliente}</strong> ${p.tieneFoto ? '📸' : ''} ${badgeOrigen} <span style="font-size:0.8rem; color:#aaa;">(${p.fecha || 'Sin fecha'})</span></div>
+                <hr style="border-color:#333; margin:8px 0;">
+                ${productosTexto}
+                <hr style="border-color:#333; margin:8px 0;">
+                <div style="font-size:1.2rem; color:#ff9800;"><strong>Total: $${parseFloat(p.total).toFixed(2)}</strong></div>
+                ${infoExtra} ${botones}
+            </div>`;
+        }
+
+        // ===================== COBRAR Y ACCIONES =====================
+        window.cobrar = function(id, metodo) {
+            idSeleccionado = id;
+            let div = document.getElementById('cuerpo-accion');
+            document.getElementById('titulo-accion').innerText = `Cobro con ${metodo}`;
+            div.innerHTML = `<p>¿Confirmas pago por <b>${metodo}</b>? Se descontarán del almacén automáticamente.</p>`;
+            document.getElementById('btn-confirmar-accion').onclick = () => ejecutar({ estado: 'Cobrado', metodo: metodo });
+            document.getElementById('modal-accion').style.display = 'flex';
+        };
+
+        window.accion = function(id, tipo) {
+            idSeleccionado = id;
+            let div = document.getElementById('cuerpo-accion');
+            document.getElementById('titulo-accion').innerText = `Aplicar ${tipo}`;
+
+            if (tipo === 'Cortesía') {
+                div.innerHTML = `<p>¿Hacer cuenta gratis ($0.00)?</p>`;
+                document.getElementById('btn-confirmar-accion').onclick = () => ejecutar({ estado: 'Cortesía', total: 0 });
+            } else if (tipo === 'Descuento') {
+                div.innerHTML = `
+                    <input type="number" id="inp-desc" placeholder="Monto a descontar" style="width:100%; padding:10px; background:#111; color:white; border-radius:5px;">
+                    <input type="text" id="inp-mot" placeholder="Motivo" style="width:100%; padding:10px; margin-top:5px; background:#111; color:white; border-radius:5px;">`;
+                document.getElementById('btn-confirmar-accion').onclick = () => {
+                    let ped = pedidosLocales.find(p => String(p.id) === String(idSeleccionado));
+                    let m = parseFloat(document.getElementById('inp-desc').value) || 0;
+                    let nuevoTotal = Math.max(0, (ped.total || 0) - m);
+                    ejecutar({ estado: 'Descuento', total: nuevoTotal, motivo: `Desc. $${m}: ${document.getElementById('inp-mot').value || ''}` });
+                };
+            } else if (tipo === 'Cancelado') {
+                let pass = prompt("Atención: Clave de administrador para cancelar la cuenta entera:");
+                if (pass !== 'IBARRITA') return alert("Clave incorrecta. Acción denegada.");
+                div.innerHTML = `<input type="text" id="inp-mot" placeholder="Motivo de cancelación" style="width:100%; padding:10px; background:#111; color:white; border-radius:5px;">`;
+                document.getElementById('btn-confirmar-accion').onclick = () => ejecutar({ estado: 'Cancelado', motivo: document.getElementById('inp-mot').value || 'Cancelado por admin' });
+            }
+            document.getElementById('modal-accion').style.display = 'flex';
+        };
+
+        function ejecutar(datos) {
+            fetch('/api/pedidos/' + idSeleccionado, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
             }).then(() => {
-                alert("✅ Número de tarjeta actualizado para los clientes.");
-                document.getElementById('modal-tarjeta').style.display = 'none';
+                document.getElementById('modal-accion').style.display = 'none';
+                renderAdmin();
             });
         }
 
-        /* ========================
-           LÓGICA DE COMPROBANTES (SOLO LECTURA)
-        ======================== */
+        // ===================== CORTE =====================
+        window.realizarCorte = function() {
+            let pass = prompt("Atención: Ingrese clave maestra para realizar el corte final del día:");
+            if (pass !== 'IBARRITA') return alert("Clave incorrecta. Acción denegada.");
+            if (confirm("¿Estás seguro de que deseas realizar el corte final del día?")) {
+                fetch('/api/corte', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+                    .then(() => {
+                        alert("✅ Corte final del día realizado con éxito.");
+                        document.getElementById('modal-cortes').style.display = 'none';
+                        renderAdmin();
+                    }).catch(() => {
+                        alert("La petición de corte fue enviada. (Verifica tu servidor backend para asegurar que la ruta '/api/corte' esté configurada).");
+                        document.getElementById('modal-cortes').style.display = 'none';
+                    });
+            }
+        };
+
+        // ===================== COMPROBANTES =====================
         function obtenerFechaDeHoy() {
             const hoy = new Date();
             return hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
@@ -220,14 +408,14 @@
         function cargarComprobantes() {
             const fecha = document.getElementById('fecha-comprobantes').value;
             const galeria = document.getElementById('galeria-comprobantes');
-            galeria.innerHTML = '<p style="color:#666; grid-column: 1 / -1; text-align: center;">Cargando...</p>';
+            galeria.innerHTML = '<p style="color:#666; grid-column:1/-1; text-align:center;">Cargando...</p>';
 
             fetch(`/api/comprobantes?fecha=${fecha}`)
                 .then(r => r.json())
                 .then(data => {
                     galeria.innerHTML = '';
                     if (!data || data.length === 0) {
-                        galeria.innerHTML = '<p style="color:#666; grid-column: 1 / -1; text-align: center;">No hay comprobantes para esta fecha.</p>';
+                        galeria.innerHTML = '<p style="color:#666; grid-column:1/-1; text-align:center;">No hay comprobantes para esta fecha.</p>';
                         return;
                     }
                     data.forEach(imgBase64 => {
@@ -239,23 +427,59 @@
                         };
                         galeria.appendChild(img);
                     });
-                }).catch(e => {
-                    galeria.innerHTML = '<p style="color:#f44336; grid-column: 1 / -1; text-align: center;">Error al cargar.</p>';
+                }).catch(() => {
+                    galeria.innerHTML = '<p style="color:#f44336; grid-column:1/-1; text-align:center;">Error al cargar.</p>';
                 });
         }
 
-        /* ========================
-           LÓGICA ORIGINAL DE CAJA
-        ======================== */
+        // ===================== HISTORIAL DE DÍAS =====================
+        function abrirHistorialDias() {
+            document.getElementById('modal-historial-dias').style.display = 'flex';
+            cargarHistorialDias();
+        }
+
+        function cargarHistorialDias() {
+            const contenedor = document.getElementById('contenedor-historial-dias');
+            contenedor.innerHTML = '<p style="color:#666; text-align:center;">Cargando historial...</p>';
+
+            fetch('/api/historial-dias')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data || data.length === 0) {
+                        contenedor.innerHTML = '<p style="color:#666; text-align:center;">No hay datos de los últimos 30 días.</p>';
+                        return;
+                    }
+                    let html = `
+                        <table class="historial-tabla">
+                            <thead><tr><th>📅 Fecha</th><th>📦 Pedidos</th><th>💰 Total Vendido</th></tr></thead>
+                            <tbody>`;
+                    data.forEach(dia => {
+                        html += `
+                            <tr>
+                                <td class="fecha-dia">${dia.fecha}</td>
+                                <td>${dia.cantidad}</td>
+                                <td class="total-dia">$${dia.total.toFixed(2)}</td>
+                            </tr>`;
+                    });
+                    html += `</tbody></table>`;
+                    contenedor.innerHTML = html;
+                }).catch(() => {
+                    contenedor.innerHTML = '<p style="color:#f44336; text-align:center;">Error al cargar el historial.</p>';
+                });
+        }
+
+        // ===================== PRECIOS =====================
         function abrirModalPrecios() {
             let pass = prompt("Atención: Ingrese clave maestra para modificar precios del sistema:");
-            if (pass !== claveSeguridad) return alert("Clave incorrecta. Acción denegada.");
+            if (pass !== 'IBARRITA') return alert("Clave incorrecta. Acción denegada.");
 
             fetch('/api/menu').then(r => r.json()).then(data => {
                 menuGlobal = data;
                 let selectCat = document.getElementById('select-cat');
                 selectCat.innerHTML = '<option value="">-- Selecciona Categoría --</option>';
-                for(let cat in data) { selectCat.innerHTML += `<option value="${cat}">${cat}</option>`; }
+                for (let cat in data) {
+                    selectCat.innerHTML += `<option value="${cat}">${cat}</option>`;
+                }
                 document.getElementById('select-prod').innerHTML = '<option value="">-- Selecciona Producto --</option>';
                 document.getElementById('nuevo-precio').value = '';
                 document.getElementById('modal-precios').style.display = 'flex';
@@ -266,7 +490,7 @@
             let cat = document.getElementById('select-cat').value;
             let selectProd = document.getElementById('select-prod');
             selectProd.innerHTML = '<option value="">-- Selecciona Producto --</option>';
-            if(cat && menuGlobal[cat]) {
+            if (cat && menuGlobal[cat]) {
                 menuGlobal[cat].forEach(p => {
                     selectProd.innerHTML += `<option value="${p.nombre}">${p.nombre} (Actual: $${p.precio})</option>`;
                 });
@@ -277,12 +501,11 @@
             let cat = document.getElementById('select-cat').value;
             let prod = document.getElementById('select-prod').value;
             let precio = parseFloat(document.getElementById('nuevo-precio').value);
-            
-            if(!cat || !prod || isNaN(precio)) return alert("Por favor ingresa un número válido para el precio.");
-            
+            if (!cat || !prod || isNaN(precio)) return alert("Por favor ingresa un número válido para el precio.");
+
             fetch('/api/menu/precio', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ categoria: cat, nombre: prod, nuevoPrecio: precio })
             }).then(() => {
                 alert("✅ Precio actualizado correctamente.\n\n⚠️ IMPORTANTE: Si tienes el 'Comandero' abierto en otra pestaña o tablet, actualiza esa página para que descargue los precios nuevos.");
@@ -290,120 +513,33 @@
             });
         }
 
-        function renderAdmin() {
-            fetch('/api/pedidos')
-                .then(r => r.json())
-                .then(pedidos => {
-                    pedidosLocales = pedidos;
-                    let htmlCaja = "";
-                    let htmlHistorial = "";
-                    let totalVentasCobradas = 0; 
+        // ===================== TARJETA =====================
+        function abrirModalTarjeta() {
+            let pass = prompt("Ingrese clave maestra para modificar el número de cuenta:");
+            if (pass !== 'IBARRITA') return alert("Clave incorrecta. Acción denegada.");
 
-                    pedidos.slice().reverse().forEach(p => {
-                        if (!p.id) return; 
-                        let estadoClase = p.estado === 'Cancelado' ? 'cancelado' : p.estado === 'Cobrado' ? 'cobrado' : '';   
-                       let productosTexto = p.items.map(i => `<div style="margin-bottom:3px;">${i.cantidad}x ${i.nombre} ($${i.subtotal || (i.cantidad * i.precio)}) <br><span style="font-size:0.85em; color:#03a9f4;">${i.comentario ? '📝 Nota: ' + i.comentario : ''}</span></div>`).join('');                       
-                       let infoExtra = "";
-                       if (p.estado === 'Cobrado') {
-                            infoExtra = `<div style="color:#8bc34a; font-weight:bold; margin-top:5px;">✅ Pagado en ${p.metodo}</div>`;
-                            totalVentasCobradas += parseFloat(p.total); 
-                        } else if (p.estado === 'Cancelado') {
-                            infoExtra = `<div style="color:#f44336; font-weight:bold; margin-top:5px;">❌ ${p.motivo}</div>`;
-                        }
-
-                        let botones = "";
-                        if (p.estado !== 'Cobrado' && p.estado !== 'Cancelado') {
-                            botones = `
-                            <div class="grid-botones">
-                                <button class="btn-act btn-pagado" onclick="cobrar('${p.id}', 'Efectivo')">💵 EFECTIVO</button>
-                                <button class="btn-act btn-tarjeta" onclick="cobrar('${p.id}', 'Tarjeta')">💳 TARJETA</button>
-                                <button class="btn-act btn-cortesia" onclick="accion('${p.id}', 'Cortesía')">🎁 Cortesía</button>
-                                <button class="btn-act btn-descuento" onclick="accion('${p.id}', 'Descuento')">🏷️ Descuento</button>
-                                <button class="btn-act btn-cancelar" onclick="accion('${p.id}', 'Cancelado')">❌ Cancelar</button>
-                            </div>`;
-                        }
-
-                        let tarjetaHTML = `
-                            <div class="tarjeta-pedido ${estadoClase}">
-                            <div><strong>${p.cliente}</strong> ${p.tieneFoto ? '📸' : ''} <span style="font-size:0.8rem; color:#aaa;">(${p.fecha || 'Sin fecha'})</span></div>                                <hr style="border-color:#333; margin:8px 0;">
-                                ${productosTexto}
-                                <hr style="border-color:#333; margin:8px 0;">
-                                <div style="font-size: 1.2rem; color:#ff9800;"><strong>Total: $${parseFloat(p.total).toFixed(2)}</strong></div>
-                                ${infoExtra} ${botones}
-                            </div>`;
-
-                        if (p.estado === 'Cobrado' || p.estado === 'Cancelado') htmlHistorial += tarjetaHTML; 
-                        else htmlCaja += tarjetaHTML;
-                    });
-                    document.getElementById('bandeja-caja').innerHTML = htmlCaja || '<p style="color:#666; text-align:center;">Sin pedidos activos</p>';
-                    document.getElementById('bandeja-historial').innerHTML = htmlHistorial || '<p style="color:#666; text-align:center;">Sin registro</p>';
-                    document.getElementById('total-ventas-historial').innerText = `Suma Total de Ventas: $${totalVentasCobradas.toFixed(2)}`;
-                });
+            fetch('/api/config/tarjeta').then(r => r.json()).then(data => {
+                document.getElementById('nueva-tarjeta').value = data.numero || '';
+                document.getElementById('modal-tarjeta').style.display = 'flex';
+            }).catch(e => console.error("Error al obtener tarjeta"));
         }
 
-        window.cobrar = function(id, metodo) {
-            idSeleccionado = id;
-            let divCuerpo = document.getElementById('cuerpo-accion');
-            document.getElementById('titulo-accion').innerText = `Cobro con ${metodo}`;
-            divCuerpo.innerHTML = `<p>¿Confirmas pago por <b>${metodo}</b>? Se descontarán del almacén automáticamente.</p>`;
-            document.getElementById('btn-confirmar-accion').onclick = () => ejecutar({ estado: 'Cobrado', metodo: metodo });
-            document.getElementById('modal-accion').style.display = 'flex';
-        };
+        function guardarTarjeta() {
+            let num = document.getElementById('nueva-tarjeta').value;
+            if (!num) return alert("Ingresa un número válido");
 
-        window.accion = function(id, tipo) {
-            idSeleccionado = id;
-            let div = document.getElementById('cuerpo-accion');
-            document.getElementById('titulo-accion').innerText = `Aplicar ${tipo}`;
-
-            if (tipo === 'Cortesía') {
-                div.innerHTML = `<p>¿Hacer cuenta gratis ($0.00)?</p>`;
-                document.getElementById('btn-confirmar-accion').onclick = () => ejecutar({ estado: 'Cortesía', total: 0 });
-            } else if (tipo === 'Descuento') {
-                div.innerHTML = `<input type="number" id="inp-desc" placeholder="Monto a descontar" style="width:100%; padding:10px; background:#111; color:white; border-radius:5px;"><input type="text" id="inp-mot" placeholder="Motivo" style="width:100%; padding:10px; margin-top:5px; background:#111; color:white; border-radius:5px;">`;
-                document.getElementById('btn-confirmar-accion').onclick = () => {
-                    let ped = pedidosLocales.find(p => String(p.id) === String(idSeleccionado));
-                    let m = document.getElementById('inp-desc').value;
-                    let nuevoTotal = Math.max(0, ped.total - m);
-                    ejecutar({ estado: 'Descuento', total: nuevoTotal, motivo: `Desc. $${m}: ${document.getElementById('inp-mot').value}` });
-                };
-            } else if (tipo === 'Cancelado') {
-                let pass = prompt("Atención: Clave de administrador para cancelar la cuenta entera:");
-                if (pass !== claveSeguridad) return alert("Clave incorrecta. Acción denegada.");
-                div.innerHTML = `<input type="text" id="inp-mot" placeholder="Motivo de cancelación" style="width:100%; padding:10px; background:#111; color:white; border-radius:5px;">`;
-                document.getElementById('btn-confirmar-accion').onclick = () => ejecutar({ estado: 'Cancelado', motivo: document.getElementById('inp-mot').value });
-            }
-            document.getElementById('modal-accion').style.display = 'flex';
-        };
-
-        function ejecutar(datos) {
-            fetch('/api/pedidos/' + idSeleccionado, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) })
-            .then(() => { document.getElementById('modal-accion').style.display = 'none'; renderAdmin(); });
+            fetch('/api/config/tarjeta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ numero: num })
+            }).then(() => {
+                alert("✅ Número de tarjeta actualizado para los clientes.");
+                document.getElementById('modal-tarjeta').style.display = 'none';
+            });
         }
 
-        /* ========================
-           NUEVA FUNCIÓN DE CORTE
-        ======================== */
-        window.realizarCorte = function() {
-            let pass = prompt("Atención: Ingrese clave maestra para realizar el corte final del día:");
-            if (pass !== claveSeguridad) return alert("Clave incorrecta. Acción denegada.");
-
-            if (confirm("¿Estás seguro de que deseas realizar el corte final del día? Esto procesará las ventas actuales.")) {
-                fetch('/api/corte', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'}
-                }).then(() => {
-                    alert("✅ Corte final del día realizado con éxito.");
-                    document.getElementById('modal-cortes').style.display = 'none';
-                    renderAdmin();
-                }).catch(e => {
-                    alert("La petición de corte fue enviada. (Verifica tu servidor backend para asegurar que la ruta '/api/corte' esté configurada).");
-                    document.getElementById('modal-cortes').style.display = 'none';
-                });
-            }
-        };
-
-        setInterval(renderAdmin, 3000);
-        renderAdmin();
+        // ===================== INICIO =====================
+        // La función iniciarAdmin() se llama después de validar la contraseña
     </script>
 </body>
 </html>

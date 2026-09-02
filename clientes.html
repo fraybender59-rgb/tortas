@@ -7,41 +7,34 @@
     <style>
         body { background-color: #121216; color: #f5f5f7; font-family: monospace; margin: 0; padding: 15px; padding-bottom: 80px; }
         .header { text-align: center; color: #ff9800; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-        
-        /* Contenedor de botones de categoría */
         .categorias-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; justify-content: center; }
         .btn-categoria { background: #222; color: #aaa; border: 1px solid #444; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: monospace; }
         .btn-categoria:hover { background: #333; }
         .btn-categoria.activa { background: #8bc34a; color: #111; border-color: #8bc34a; }
-        
-        .categoria-seccion { display: none; } /* Ocultar todas por defecto */
-        
+        .categoria-seccion { display: none; }
         .producto-card { background: #1e1e24; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; gap: 5px; }
         .producto-header { display: flex; justify-content: space-between; align-items: center; }
         .producto-nombre { font-size: 1.2rem; font-weight: bold; color: #fff; }
         .producto-precio { color: #00bcd4; font-weight: bold; font-size: 1.1rem; }
         .producto-desc { font-size: 0.85rem; color: #aaa; margin-top: 3px; }
-        
         .controles-agregar { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; border-top: 1px dashed #444; padding-top: 10px; }
         .input-comentario { background: #111; color: #fff; border: 1px solid #555; padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; font-family: monospace; }
         .btn-agregar { background: #ff9800; color: #111; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; text-align: center; font-family: monospace; }
-        
         .carrito-flotante { position: fixed; bottom: 0; left: 0; width: 100%; background: #2a2a35; padding: 15px; border-top: 2px solid #ff9800; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; z-index: 100; }
         .btn-ver-carrito { background: #8bc34a; color: #111; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-family: monospace; }
-        
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .modal-titulo { color: #ff9800; text-align: center; margin-bottom: 20px; }
         .item-carrito { background: #1e1e24; padding: 10px; margin-bottom: 10px; border-radius: 5px; border-left: 3px solid #ff9800; }
         .item-nota { color: #03a9f4; font-size: 0.8rem; font-style: italic; display: block; margin-top: 5px; }
         .btn-eliminar { background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; float: right; margin-top: -20px; }
-        
         .seccion-pago { background: #111; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #444; }
         .input-form { width: 100%; padding: 10px; margin-bottom: 10px; background: #222; color: #fff; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; font-family: monospace; }
         .btn-confirmar { background: #8bc34a; color: #111; width: 100%; padding: 15px; border: none; font-weight: bold; font-size: 1.1rem; border-radius: 5px; cursor: pointer; margin-top: 10px; font-family: monospace; }
         .btn-cerrar-modal { background: #444; color: #fff; width: 100%; padding: 10px; border: none; margin-top: 10px; border-radius: 5px; cursor: pointer; font-family: monospace; }
-        
         .file-upload-wrapper { display: flex; flex-direction: column; align-items: center; gap: 10px; background: #222; padding: 15px; border-radius: 5px; border: 1px dashed #8bc34a; margin-bottom: 10px; }
         .btn-upload { background: #3f51b5; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: monospace; }
+        .estado-foto-ok { color: #8bc34a; font-weight: bold; }
+        .estado-foto-error { color: #f44336; }
     </style>
 </head>
 <body>
@@ -51,46 +44,36 @@
         <p>Tortas Gigantes - El tamaño sí importa</p>
     </div>
 
-    <!-- Contenedor donde se insertarán los botones y los productos -->
     <div id="contenedor-menu">Cargando menú...</div>
 
     <div class="carrito-flotante">
-        <div style="font-size: 1.2rem; font-weight: bold;">Total: $<span id="total-flotante">0.00</span></div>
+        <div style="font-size:1.2rem; font-weight:bold;">Total: $<span id="total-flotante">0.00</span></div>
         <button class="btn-ver-carrito" onclick="abrirCarrito()">Ver Pedido (<span id="contador-carrito">0</span>)</button>
     </div>
 
-    <!-- MODAL DEL CARRITO Y PAGO -->
     <div id="modal-carrito" class="modal">
         <h2 class="modal-titulo">🛒 Tu Pedido</h2>
         <div id="lista-carrito"></div>
-        
-        <h3 style="color:#00bcd4; text-align: right;">Total a Pagar: $<span id="total-carrito">0.00</span></h3>
-        
+        <h3 style="color:#00bcd4; text-align:right;">Total a Pagar: $<span id="total-carrito">0.00</span></h3>
         <div class="seccion-pago">
-            <h4 style="color: #ff9800; margin-top:0;">1. Tus Datos</h4>
+            <h4 style="color:#ff9800; margin-top:0;">1. Tus Datos</h4>
             <input type="text" id="nombre-cliente" class="input-form" placeholder="Tu Nombre">
-            
-            <h4 style="color: #ff9800;">2. Método de Pago</h4>
+            <h4 style="color:#ff9800;">2. Método de Pago</h4>
             <select id="metodo-pago" class="input-form" onchange="verificarMetodoPago()">
                 <option value="Efectivo">Efectivo al recoger</option>
                 <option value="Transferencia">Transferencia Bancaria</option>
             </select>
-
-            <!-- Sección de transferencia que aparece/desaparece -->
             <div id="info-transferencia" style="display:none;">
-                <p style="color: #aaa; font-size: 0.9rem;">Transfiere a esta cuenta y sube la captura de pantalla:</p>
-                <div style="background: #000; padding: 10px; text-align: center; font-size: 1.2rem; color: #8bc34a; letter-spacing: 2px; margin-bottom: 10px; border-radius: 5px;" id="numero-tarjeta">Cargando tarjeta...</div>
-                
+                <p style="color:#aaa; font-size:0.9rem;">Transfiere a esta cuenta y sube la captura de pantalla:</p>
+                <div style="background:#000; padding:10px; text-align:center; font-size:1.2rem; color:#8bc34a; letter-spacing:2px; margin-bottom:10px; border-radius:5px;" id="numero-tarjeta">Cargando tarjeta...</div>
                 <div class="file-upload-wrapper">
-                    <input type="file" id="input-foto" accept="image/*" style="display: none;" onchange="procesarFoto(event)">
+                    <input type="file" id="input-foto" accept="image/*" style="display:none;" onchange="procesarFoto(event)">
                     <button class="btn-upload" onclick="document.getElementById('input-foto').click()">📸 Subir Captura de Pago</button>
-                    <span id="estado-foto" style="color: #aaa; font-size: 0.8rem;">Ninguna foto seleccionada</span>
+                    <span id="estado-foto" style="color:#aaa; font-size:0.8rem;">Ninguna foto seleccionada</span>
                 </div>
             </div>
-            
             <button class="btn-confirmar" onclick="enviarPedido()">🚀 Enviar Pedido a Cocina</button>
         </div>
-        
         <button class="btn-cerrar-modal" onclick="cerrarCarrito()">Volver al Menú</button>
     </div>
 
@@ -98,23 +81,17 @@
         let carrito = [];
         let fotoBase64 = null;
 
-        // Cargar menú y armar botones de categoría
+        // Cargar menú
         fetch('/api/menu').then(r => r.json()).then(menu => {
             let htmlBotones = '<div class="categorias-container">';
             let htmlProductos = '';
-            let primeraCategoria = true;
-
+            let primera = true;
             for (let categoria in menu) {
                 let idCat = categoria.replace(/\s+/g, '-');
-                
-                // Botones superiores
-                htmlBotones += `<button class="btn-categoria ${primeraCategoria ? 'activa' : ''}" onclick="mostrarCategoria('${idCat}')" id="btn-${idCat}">${categoria}</button>`;
-                
-                // Contenedores de productos
-                htmlProductos += `<div id="cat-${idCat}" class="categoria-seccion" style="display: ${primeraCategoria ? 'block' : 'none'};">`;
-                
+                htmlBotones += `<button class="btn-categoria ${primera ? 'activa' : ''}" onclick="mostrarCategoria('${idCat}')" id="btn-${idCat}">${categoria}</button>`;
+                htmlProductos += `<div id="cat-${idCat}" class="categoria-seccion" style="display:${primera ? 'block' : 'none'};">`;
                 menu[categoria].forEach(prod => {
-                    let idInput = prod.nombre.replace(/\s+/g, ''); 
+                    let idInput = prod.nombre.replace(/\s+/g, '');
                     htmlProductos += `
                     <div class="producto-card">
                         <div class="producto-header">
@@ -129,108 +106,108 @@
                     </div>`;
                 });
                 htmlProductos += `</div>`;
-                primeraCategoria = false;
+                primera = false;
             }
             htmlBotones += '</div>';
             document.getElementById('contenedor-menu').innerHTML = htmlBotones + htmlProductos;
         });
 
-        // Función para cambiar entre categorías
         function mostrarCategoria(idCat) {
-            // Ocultar todos los productos
-            document.querySelectorAll('.categoria-seccion').forEach(div => div.style.display = 'none');
-            // Quitar clase activa de todos los botones
-            document.querySelectorAll('.btn-categoria').forEach(btn => btn.classList.remove('activa'));
-            
-            // Mostrar la categoría seleccionada y activar su botón
+            document.querySelectorAll('.categoria-seccion').forEach(d => d.style.display = 'none');
+            document.querySelectorAll('.btn-categoria').forEach(b => b.classList.remove('activa'));
             document.getElementById(`cat-${idCat}`).style.display = 'block';
             document.getElementById(`btn-${idCat}`).classList.add('activa');
         }
 
-        // Cargar tarjeta configurada en caja
         fetch('/api/config/tarjeta').then(r => r.json()).then(data => {
-            document.getElementById('numero-tarjeta').innerText = data.numero;
+            document.getElementById('numero-tarjeta').innerText = data.numero || '1234 5678 9012 3456';
         });
 
         function agregarAlCarrito(nombre, precio, idInput) {
             let comentario = document.getElementById(`nota-${idInput}`).value;
-            
-            let itemExistente = carrito.find(i => i.nombre === nombre && i.comentario === comentario);
-            if (itemExistente) {
-                itemExistente.cantidad++;
-            } else {
-                carrito.push({ nombre, precio, cantidad: 1, comentario });
-            }
-            
-            document.getElementById(`nota-${idInput}`).value = ""; // Limpiar input
+            let existente = carrito.find(i => i.nombre === nombre && i.comentario === comentario);
+            if (existente) { existente.cantidad++; } else { carrito.push({ nombre, precio, cantidad: 1, comentario }); }
+            document.getElementById(`nota-${idInput}`).value = "";
             actualizarCarrito();
-            
-            // Efecto visual rápido
             let btn = event.target;
-            let textoOriginal = btn.innerText;
+            let txt = btn.innerText;
             btn.innerText = "¡Agregado! ✔️";
             btn.style.background = "#8bc34a";
-            setTimeout(() => { btn.innerText = textoOriginal; btn.style.background = "#ff9800"; }, 1000);
+            setTimeout(() => { btn.innerText = txt; btn.style.background = "#ff9800"; }, 1000);
         }
 
         function actualizarCarrito() {
-            let total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-            let cantidad = carrito.reduce((sum, item) => sum + item.cantidad, 0);
-            
+            let total = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+            let cant = carrito.reduce((s, i) => s + i.cantidad, 0);
             document.getElementById('total-flotante').innerText = total.toFixed(2);
             document.getElementById('total-carrito').innerText = total.toFixed(2);
-            document.getElementById('contador-carrito').innerText = cantidad;
-
-            let htmlCarrito = "";
-            carrito.forEach((item, index) => {
-                htmlCarrito += `
+            document.getElementById('contador-carrito').innerText = cant;
+            let html = "";
+            carrito.forEach((item, idx) => {
+                html += `
                 <div class="item-carrito">
                     <strong>${item.cantidad}x ${item.nombre}</strong> - $${item.precio * item.cantidad}
                     ${item.comentario ? `<span class="item-nota">Nota: ${item.comentario}</span>` : ''}
-                    <button class="btn-eliminar" onclick="eliminarDelCarrito(${index})">X</button>
+                    <button class="btn-eliminar" onclick="eliminarDelCarrito(${idx})">X</button>
                 </div>`;
             });
-            document.getElementById('lista-carrito').innerHTML = htmlCarrito || "<p style='text-align:center; color:#aaa;'>El carrito está vacío</p>";
+            document.getElementById('lista-carrito').innerHTML = html || "<p style='text-align:center; color:#aaa;'>El carrito está vacío</p>";
         }
 
-        function eliminarDelCarrito(index) {
-            carrito.splice(index, 1);
-            actualizarCarrito();
-        }
-
+        function eliminarDelCarrito(idx) { carrito.splice(idx, 1); actualizarCarrito(); }
         function abrirCarrito() { document.getElementById('modal-carrito').style.display = 'flex'; }
         function cerrarCarrito() { document.getElementById('modal-carrito').style.display = 'none'; }
 
         function verificarMetodoPago() {
             let metodo = document.getElementById('metodo-pago').value;
-            let divTransferencia = document.getElementById('info-transferencia');
+            let div = document.getElementById('info-transferencia');
             if (metodo === 'Transferencia') {
-                divTransferencia.style.display = 'block';
+                div.style.display = 'block';
             } else {
-                divTransferencia.style.display = 'none';
-                fotoBase64 = null; 
+                div.style.display = 'none';
+                fotoBase64 = null;
                 document.getElementById('estado-foto').innerText = 'Ninguna foto seleccionada';
+                document.getElementById('estado-foto').className = '';
                 document.getElementById('input-foto').value = "";
             }
         }
 
-        // Convertir foto a código para enviarla a Firebase
+        // COMPRESIÓN DE IMAGEN para evitar límites de Firebase
         function procesarFoto(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                fotoBase64 = e.target.result;
-                document.getElementById('estado-foto').innerText = '✅ Imagen lista para enviar';
-                document.getElementById('estado-foto').style.color = '#8bc34a';
+                const img = new Image();
+                img.onload = function() {
+                    // Reducir tamaño máximo a 800px de ancho
+                    let w = img.width, h = img.height;
+                    const maxW = 800, maxH = 800;
+                    if (w > maxW || h > maxH) {
+                        const ratio = Math.min(maxW / w, maxH / h);
+                        w = Math.round(w * ratio);
+                        h = Math.round(h * ratio);
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    // Calidad 0.7 para reducir tamaño
+                    fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    const el = document.getElementById('estado-foto');
+                    el.innerText = '✅ Imagen comprimida y lista';
+                    el.className = 'estado-foto-ok';
+                };
+                img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
 
         function enviarPedido() {
             if (carrito.length === 0) return alert("Tu carrito está vacío.");
-            let nombre = document.getElementById('nombre-cliente').value;
+            let nombre = document.getElementById('nombre-cliente').value.trim();
             if (!nombre) return alert("Por favor ingresa tu nombre.");
             let metodo = document.getElementById('metodo-pago').value;
 
@@ -238,19 +215,21 @@
                 return alert("Por favor sube la captura de pantalla de tu transferencia para verificar el pago.");
             }
 
-            let total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            let total = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
             let pedido = {
                 cliente: nombre,
                 items: carrito,
                 total: total,
                 estado: "Pendiente",
                 metodoPagoInicial: metodo,
-                comprobanteAdjunto: fotoBase64 
+                comprobanteAdjunto: fotoBase64,
+                origen: 'cliente'  // <-- NUEVO: para identificar que viene de clientes
             };
 
-            let btnConfirmar = document.querySelector('.btn-confirmar');
-            btnConfirmar.innerText = "⏳ Enviando pedido...";
-            btnConfirmar.disabled = true;
+            let btn = document.querySelector('.btn-confirmar');
+            let txtOriginal = btn.innerText;
+            btn.innerText = "⏳ Enviando...";
+            btn.disabled = true;
 
             fetch('/api/pedidos', {
                 method: 'POST',
@@ -265,14 +244,15 @@
                     document.getElementById('nombre-cliente').value = '';
                     fotoBase64 = null;
                     document.getElementById('estado-foto').innerText = 'Ninguna foto seleccionada';
+                    document.getElementById('estado-foto').className = '';
                     document.getElementById('input-foto').value = "";
-                    btnConfirmar.innerText = "🚀 Enviar Pedido a Cocina";
-                    btnConfirmar.disabled = false;
+                    btn.innerText = txtOriginal;
+                    btn.disabled = false;
                 }
-            }).catch(e => {
+            }).catch(() => {
                 alert("Hubo un error al enviar tu pedido. Intenta nuevamente.");
-                btnConfirmar.innerText = "🚀 Enviar Pedido a Cocina";
-                btnConfirmar.disabled = false;
+                btn.innerText = txtOriginal;
+                btn.disabled = false;
             });
         }
     </script>

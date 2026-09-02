@@ -14,24 +14,19 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-// Función automática para borrar comprobantes de más de 30 días
+
+// Limpieza automática de comprobantes > 30 días
 async function limpiarComprobantesAntiguos() {
     try {
         const hace30Dias = new Date();
         hace30Dias.setDate(hace30Dias.getDate() - 30);
-        const isoLimite = hace30Dias.toISOString(); // Fecha límite en texto
-
+        const isoLimite = hace30Dias.toISOString();
         const snapshot = await db.collection('comprobantes').where('creadoEn', '<', isoLimite).get();
-        
-        if (snapshot.empty) return; // Si no hay viejos, no hace nada
-
+        if (snapshot.empty) return;
         const batch = db.batch();
-        snapshot.docs.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
-        console.log(`🧹 Limpieza automática: Se borraron ${snapshot.size} comprobantes antiguos.`);
+        console.log(`🧹 Limpieza automática: ${snapshot.size} comprobantes antiguos borrados.`);
     } catch (e) {
         console.error("Error limpiando comprobantes antiguos:", e.message);
     }
@@ -108,6 +103,8 @@ const invBase = {
   "Ingrediente Extra": 50, "Coca Cola": 50, "Agua Embotellada": 50
 };
 
+// ===================== ENDPOINTS =====================
+
 app.get('/api/menu', async (req, res) => {
   try {
     const doc = await db.collection('config').doc('menu_la_queen').get();
@@ -131,27 +128,22 @@ app.get('/api/pedidos', async (req, res) => {
 app.post('/api/pedidos', async (req, res) => {
   try {
     const { comprobanteAdjunto, ...datosPedido } = req.body;
-    
     const nuevoPedido = { 
         ...datosPedido, 
         fecha: new Date().toISOString(),
         tieneFoto: comprobanteAdjunto ? true : false 
     };
-    
     const docRef = await db.collection('pedidos').add(nuevoPedido);
 
     if (comprobanteAdjunto) {
         await db.collection('comprobantes').add({
             pedidoId: docRef.id,
-            fecha: nuevoPedido.fecha.split('T')[0], 
+            fecha: nuevoPedido.fecha.split('T')[0],
             imagen: comprobanteAdjunto,
             creadoEn: nuevoPedido.fecha
         });
     }
-
-    // Ejecutamos limpieza automática sin detener el proceso del cliente
     limpiarComprobantesAntiguos();
-
     res.json({ success: true, id: docRef.id });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -198,10 +190,8 @@ app.post('/api/inventario/modificar', async (req, res) => {
         const invRef = db.collection('config').doc('inventario_la_queen');
         const doc = await invRef.get();
         if (!doc.exists) return res.status(404).json({ error: 'Inventario no encontrado' });
-        
         let inventario = doc.data();
         let cantNum = parseInt(cantidad);
-        
         if (operacion === 'sumar') { inventario[nombre] += cantNum; } 
         else if (operacion === 'restar') {
             inventario[nombre] -= cantNum;
@@ -253,6 +243,51 @@ app.get('/api/comprobantes', async (req, res) => {
     snapshot.forEach(doc => fotos.push(doc.data().imagen));
     res.json(fotos);
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===================== NUEVO: HISTORIAL DE DÍAS (últimos 30 días) =====================
+app.get('/api/historial-dias', async (req, res) => {
+  try {
+    const hoy = new Date();
+    const hace30Dias = new Date();
+    hace30Dias.setDate(hace30Dias.getDate() - 30);
+    const inicioStr = hace30Dias.toISOString().split('T')[0];
+    const finStr = hoy.toISOString().split('T')[0];
+
+    // Obtener todos los pedidos cobrados de los últimos 30 días
+    const snapshot = await db.collection('pedidos')
+      .where('estado', '==', 'Cobrado')
+      .get();
+
+    const resumenPorDia = {};
+
+    snapshot.forEach(doc => {
+      const p = doc.data();
+      if (!p.fecha) return;
+      const fechaDia = p.fecha.split('T')[0];
+      // Solo considerar si está en el rango de los últimos 30 días
+      if (fechaDia < inicioStr || fechaDia > finStr) return;
+      if (!resumenPorDia[fechaDia]) {
+        resumenPorDia[fechaDia] = { total: 0, cantidad: 0 };
+      }
+      resumenPorDia[fechaDia].total += parseFloat(p.total) || 0;
+      resumenPorDia[fechaDia].cantidad += 1;
+    });
+
+    // Convertir a array y ordenar por fecha descendente
+    const resultado = Object.keys(resumenPorDia)
+      .sort((a, b) => b.localeCompare(a))
+      .map(fecha => ({
+        fecha,
+        total: resumenPorDia[fecha].total,
+        cantidad: resumenPorDia[fecha].cantidad
+      }));
+
+    res.json(resultado);
+  } catch (e) {
+    console.error('Error en historial-dias:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 module.exports = app;
