@@ -13,6 +13,8 @@
         .btn-nav { color: #fff; padding: 10px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; cursor: pointer; border: 1px solid #555; display: inline-block; }
         .btn-comandero-pub { background: #2d3748; }
         .btn-comandero-caja { background: #4a5568; }
+        .btn-almacen { background: #1b5e20; }    /* Verde oscuro */
+        .btn-cocina { background: #bf360c; }     /* Naranja rojizo */
         .btn-ventas { background: #d97706; }
         .btn-cobradas { background: #9333ea; }
         .btn-historial-dias { background: #0d9488; }
@@ -83,6 +85,8 @@
         <div class="barra-nav">
             <a href="clientes.html" target="_blank" class="btn-nav btn-comandero-pub">📱 Comandero Público (Clientes)</a>
             <a href="comandero.html" target="_blank" class="btn-nav btn-comandero-caja">📝 Comandero Staff (Cocina)</a>
+            <a href="almacen.html" target="_blank" class="btn-nav btn-almacen">📦 Almacén</a>
+            <a href="cocina.html" target="_blank" class="btn-nav btn-cocina">👨‍🍳 Cocina (Monitoreo)</a>
             <button onclick="document.getElementById('modal-cortes').style.display='flex';" class="btn-nav btn-ventas">💰 Ver Ventas / Corte</button>
             <button onclick="document.getElementById('modal-historial').style.display='flex';" class="btn-nav btn-cobradas">📁 Cobradas Hoy</button>
             <button onclick="abrirHistorialDias()" class="btn-nav btn-historial-dias">📅 Historial de Días</button>
@@ -108,7 +112,7 @@
             </div>
         </div>
 
-        <!-- MODALES (igual que antes pero mejorados) -->
+        <!-- MODALES (igual que antes) -->
         <div id="modal-historial" class="modal-overlay">
             <div class="modal-content">
                 <h3 style="color:#ff9800; text-align:center;">📁 Cobradas Hoy</h3>
@@ -537,9 +541,6 @@
                 document.getElementById('modal-tarjeta').style.display = 'none';
             });
         }
-
-        // ===================== INICIO =====================
-        // La función iniciarAdmin() se llama después de validar la contraseña
     </script>
 </body>
 </html>
