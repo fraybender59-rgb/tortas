@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cocina - La Queen 👑</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+    body { padding: 20px; background: #f4f4f9; color: #333; }
+    h1 { text-align: center; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 1400px; margin: 0 auto; }
+    .card { background: #fff; border-radius: 10px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 8px solid #4caf50; transition: all 0.2s; }
+    .card.verde { border-left-color: #4caf50; background: #f1f8e9; }
+    .card.amarillo { border-left-color: #ffeb3b; background: #fffde7; }
+    .card.rojo { border-left-color: #f44336; background: #ffebee; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .cliente { font-size: 1.2em; font-weight: bold; }
+    .tiempo { font-size: 0.9em; color: #666; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.8em; font-weight: bold; }
+    .badge-verde { background: #4caf50; color: #fff; }
+    .badge-amarillo { background: #ffeb3b; color: #333; }
+    .badge-rojo { background: #f44336; color: #fff; }
+    .items { margin: 10px 0; padding-left: 10px; border-left: 2px solid #ddd; }
+    .item { display: flex; justify-content: space-between; padding: 4px 0; }
+    .comentario { font-size: 0.85em; color: #03a9f4; font-style: italic; margin-left: 15px; }
+    .total { font-weight: bold; text-align: right; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px; }
+    .sin-pedidos { text-align: center; color: #999; font-size: 1.2em; padding: 40px; grid-column: 1 / -1; }
+    .actualizar { display: block; margin: 20px auto; padding: 10px 30px; background: #1976d2; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; }
+    .actualizar:hover { background: #1565c0; }
+  </style>
+</head>
+<body>
+
+  <h1>👨‍🍳 Cocina - La Queen</h1>
+  <button class="actualizar" onclick="cargarPedidos()">🔄 Actualizar</button>
+  <div id="pedidosContainer" class="grid"></div>
+
+  <script>
+    let pedidos = [];
+
+    function formatearTiempo(fechaISO) {
+      if (!fechaISO) return '--';
+      const ahora = new Date();
+      const creado = new Date(fechaISO);
+      const diffMs = ahora - creado;
+      const diffMin = Math.floor(diffMs / 60000);
+      return diffMin;
+    }
+
+    function obtenerEstado(minutos) {
+      if (minutos <= 5) return { clase: 'verde', badge: 'badge-verde', texto: '🟢 Recién' };
+      if (minutos <= 15) return { clase: 'amarillo', badge: 'badge-amarillo', texto: '🟡 En proceso' };
+      return { clase: 'rojo', badge: 'badge-rojo', texto: '🔴 Demorado' };
+    }
+
+    function renderizarPedidos() {
+      const container = document.getElementById('pedidosContainer');
+      const activos = pedidos.filter(p => p.estado !== 'Cobrado' && p.estado !== 'Cancelado');
+
+      if (activos.length === 0) {
+        container.innerHTML = '<div class="sin-pedidos">✅ No hay pedidos activos en cocina.</div>';
+        return;
+      }
+
+      let html = '';
+      activos.forEach(p => {
+        const minutos = formatearTiempo(p.fecha);
+        const estado = obtenerEstado(minutos);
+        const badge = `<span class="badge ${estado.badge}">${estado.texto} ${minutos} min</span>`;
+
+        let itemsHtml = '';
+        if (p.items && p.items.length) {
+          p.items.forEach(item => {
+            const comentario = item.comentario ? `<span class="comentario">📝 ${item.comentario}</span>` : '';
+            itemsHtml += `
+              <div class="item">
+                <span>${item.cantidad}x ${item.nombre}</span>
+                <span>$${item.precio * item.cantidad}</span>
+                ${comentario}
+              </div>
+            `;
+          });
+        }
+
+        html += `
+          <div class="card ${estado.clase}">
+            <div class="card-header">
+              <span class="cliente">${p.cliente}</span>
+              ${badge}
+            </div>
+            <div style="font-size:0.85em; color:#666;">Origen: ${p.origen === 'cliente' ? '👤 Cliente' : '👨‍🍳 Staff'}</div>
+            <div class="items">${itemsHtml}</div>
+            <div class="total">Total: $${parseFloat(p.total || 0).toFixed(2)}</div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    async function cargarPedidos() {
+      try {
+        const res = await fetch('/api/pedidos');
+        pedidos = await res.json();
+        renderizarPedidos();
+      } catch (e) {
+        console.error('Error al cargar pedidos:', e);
+      }
+    }
+
+    // Auto-actualizar cada 10 segundos
+    setInterval(cargarPedidos, 10000);
+    cargarPedidos();
+  </script>
+</body>
+</html>

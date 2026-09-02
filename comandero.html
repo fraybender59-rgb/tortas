@@ -25,10 +25,6 @@
     .input-field { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
     .btn-send { width: 100%; padding: 12px; background: #2e7d32; color: white; font-size: 16px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; transition: 0.2s; }
     .btn-send:hover { background: #1b5e20; }
-    .kitchen-status { width: 100%; margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 10px; }
-    .card-pedido { border: 2px solid #ff9800; background: #fffde7; padding: 10px; border-radius: 6px; }
-    .card-pedido.cocina { border-color: #2196f3; background: #e3f2fd; }
   </style>
 </head>
 <body>
@@ -51,13 +47,6 @@
     </div>
   </div>
 
-  <div class="container">
-    <div class="kitchen-status">
-      <h2>Pedidos en Cocina / Pendientes</h2>
-      <div id="pedidosActivos" class="orders-grid"></div>
-    </div>
-  </div>
-
   <script>
     let menuData = {};
     let currentOrder = [];
@@ -67,8 +56,6 @@
         const res = await fetch('/api/menu');
         menuData = await res.json();
         renderCategories();
-        cargarPedidos();
-        setInterval(cargarPedidos, 4000);
       } catch (e) {
         console.error("Error al cargar menú", e);
       }
@@ -143,7 +130,7 @@
         items: currentOrder,
         estado: 'En Cocina',
         total: parseFloat(document.getElementById('totalPrice').innerText),
-        origen: 'staff'  // <-- NUEVO: identificador para staff
+        origen: 'staff'
       };
 
       const res = await fetch('/api/pedidos', {
@@ -157,28 +144,9 @@
         currentOrder = [];
         document.getElementById('mesaInput').value = '';
         renderOrder();
-        cargarPedidos();
+      } else {
+        alert('Error al enviar el pedido.');
       }
-    }
-
-    async function cargarPedidos() {
-      try {
-        const res = await fetch('/api/pedidos');
-        const pedidos = await res.json();
-        const grid = document.getElementById('pedidosActivos');
-        grid.innerHTML = '';
-        pedidos.filter(p => p.estado !== 'Cobrado' && p.estado !== 'Cancelado').forEach(p => {
-          const div = document.createElement('div');
-          div.className = `card-pedido ${p.estado === 'En Cocina' ? 'cocina' : ''}`;
-          const badge = p.origen === 'cliente' ? '👤 Cliente' : '👨‍🍳 Staff';
-          div.innerHTML = `
-            <strong>${p.cliente}</strong> (${p.estado}) ${badge}<br>
-            <small>${p.items.map(i => `${i.cantidad}x ${i.nombre}`).join(', ')}</small><br>
-            <b>Total: $${p.total}</b>
-          `;
-          grid.appendChild(div);
-        });
-      } catch(e) {}
     }
 
     init();
