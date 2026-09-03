@@ -31,13 +31,21 @@
 
     .nav-btn { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #333; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
     .nav-btn:hover { background: #555; }
+
+    .btn-refresh { display: inline-block; margin-left: 15px; padding: 10px 20px; background: #0d9488; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+    .btn-refresh:hover { background: #0a7a6e; }
+
+    .header-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 20px; }
   </style>
 </head>
 <body>
 
   <div class="container">
     <a href="administracion.html" class="nav-btn">⬅ Volver a Administración</a>
-    <h1>📦 Control de Inventario</h1>
+    <div class="header-actions">
+      <h1>📦 Control de Inventario</h1>
+      <button class="btn-refresh" onclick="cargarInventario()">🔄 Actualizar</button>
+    </div>
     
     <input type="text" id="buscador" class="search-bar" placeholder="Buscar producto o torta (ej. Cubana, Coca Cola...)" onkeyup="filtrarInventario()">
 
@@ -57,6 +65,11 @@
         renderInventario();
       } catch (e) {
         console.error("Error al cargar inventario", e);
+        // Mostrar mensaje de error en el contenedor
+        const container = document.getElementById('inventoryContainer');
+        if (primeraCarga) {
+          container.innerHTML = '<p style="color:#f44336; text-align:center; grid-column:1/-1;">⚠️ Error al cargar el inventario. Verifica tu conexión o la cuota de Firestore.</p>';
+        }
       }
     }
 
@@ -65,13 +78,11 @@
       const filtro = document.getElementById('buscador').value.toLowerCase();
       const items = Object.keys(inventarioGlobal).sort();
 
-      // Si es la primera vez, construimos todos los cuadros de HTML
       if (primeraCarga) {
         container.innerHTML = '';
         items.forEach(nombre => {
           const div = document.createElement('div');
           div.className = 'inv-card';
-          // Creamos un ID seguro sin espacios para evitar errores de JS
           const idNombre = nombre.replace(/[^a-zA-Z0-9]/g, '_'); 
           
           div.innerHTML = `
@@ -87,7 +98,7 @@
         });
         primeraCarga = false;
       } else {
-        // En actualizaciones de segundo plano, SOLO cambiamos los números
+        // Actualizar solo los valores numéricos
         items.forEach(nombre => {
           const idNombre = nombre.replace(/[^a-zA-Z0-9]/g, '_'); 
           const stockEl = document.getElementById('stock_' + idNombre);
@@ -98,7 +109,7 @@
         });
       }
 
-      // Aplicar el filtro de búsqueda
+      // Aplicar filtro de búsqueda
       const cards = container.getElementsByClassName('inv-card');
       for (let card of cards) {
         const name = card.querySelector('.item-name').innerText.toLowerCase();
@@ -124,7 +135,7 @@
 
         if (res.ok) {
           input.value = 1; 
-          cargarInventario(); // Forzar actualización visual al instante
+          cargarInventario(); // Recargar para reflejar cambios
         } else {
           alert("Error al actualizar el inventario.");
         }
@@ -137,11 +148,11 @@
       renderInventario();
     }
 
-    // Arrancamos el inventario
+    // Carga inicial
     cargarInventario();
     
-    // 🔥 La Magia: Actualiza la pantalla cada 4 segundos
-    setInterval(cargarInventario, 4000); 
+    // Actualización automática cada 15 segundos (reduce consumo de cuota)
+    setInterval(cargarInventario, 15000);
   </script>
 </body>
 </html>

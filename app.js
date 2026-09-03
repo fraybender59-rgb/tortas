@@ -103,6 +103,32 @@ const invBase = {
   "Ingrediente Extra": 50, "Coca Cola": 50, "Agua Embotellada": 50
 };
 
+// ===================== FUNCIÓN PARA DESCONTAR INVENTARIO =====================
+async function descontarInventario(items) {
+    if (!items || items.length === 0) return;
+    const invRef = db.collection('config').doc('inventario_la_queen');
+    const invDoc = await invRef.get();
+    let inventario = invDoc.exists ? invDoc.data() : {};
+
+    let cambios = false;
+    items.forEach(item => {
+        const nombre = item.nombre;
+        if (inventario[nombre] !== undefined) {
+            const cantidad = item.cantidad || 1;
+            inventario[nombre] -= cantidad;
+            if (inventario[nombre] < 0) inventario[nombre] = 0; // Nunca negativo
+            cambios = true;
+        } else {
+            console.warn(`⚠️ Producto "${nombre}" no encontrado en inventario.`);
+        }
+    });
+
+    if (cambios) {
+        await invRef.set(inventario, { merge: true });
+        console.log(`📦 Inventario actualizado tras crear pedido.`);
+    }
+}
+
 // ===================== ENDPOINTS =====================
 
 app.get('/api/menu', async (req, res) => {
@@ -133,8 +159,17 @@ app.post('/api/pedidos', async (req, res) => {
         fecha: new Date().toISOString(),
         tieneFoto: comprobanteAdjunto ? true : false 
     };
+    
+    // Guardar pedido
     const docRef = await db.collection('pedidos').add(nuevoPedido);
 
+    // Si el pedido tiene items, descontar inventario (independientemente del estado)
+    // Normalmente los pedidos llegan con estado "En Cocina" o "Pendiente"
+    if (datosPedido.items && datosPedido.items.length > 0) {
+        await descontarInventario(datosPedido.items);
+    }
+
+    // Guardar comprobante si existe
     if (comprobanteAdjunto) {
         await db.collection('comprobantes').add({
             pedidoId: docRef.id,
@@ -143,9 +178,13 @@ app.post('/api/pedidos', async (req, res) => {
             creadoEn: nuevoPedido.fecha
         });
     }
+
     limpiarComprobantesAntiguos();
     res.json({ success: true, id: docRef.id });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { 
+    console.error('Error al crear pedido:', e);
+    res.status(500).json({ error: e.message }); 
+  }
 });
 
 app.patch('/api/pedidos/:id', async (req, res) => {
@@ -154,21 +193,9 @@ app.patch('/api/pedidos/:id', async (req, res) => {
     const cambios = req.body;
     await db.collection('pedidos').doc(id).update(cambios);
 
-    if (cambios.estado === 'Cobrado') {
-      const pedidoDoc = await db.collection('pedidos').doc(id).get();
-      const pedido = pedidoDoc.data();
-      if (pedido && pedido.items) {
-        const invRef = db.collection('config').doc('inventario_la_queen');
-        const invDoc = await invRef.get();
-        let inventario = invDoc.exists ? invDoc.data() : {};
-        pedido.items.forEach(item => {
-          if (inventario[item.nombre] !== undefined) {
-            inventario[item.nombre] -= item.cantidad;
-          }
-        });
-        await invRef.set(inventario, { merge: true });
-      }
-    }
+    // ELIMINADO: el descuento de inventario ya se hizo al crear el pedido.
+    // Si se cobra, solo se actualiza el estado, no se descuenta de nuevo.
+
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -245,7 +272,7 @@ app.get('/api/comprobantes', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ===================== NUEVO: HISTORIAL DE DÍAS (últimos 30 días) =====================
+// ===================== HISTORIAL DE DÍAS (últimos 30 días) =====================
 app.get('/api/historial-dias', async (req, res) => {
   try {
     const hoy = new Date();
@@ -254,7 +281,6 @@ app.get('/api/historial-dias', async (req, res) => {
     const inicioStr = hace30Dias.toISOString().split('T')[0];
     const finStr = hoy.toISOString().split('T')[0];
 
-    // Obtener todos los pedidos cobrados de los últimos 30 días
     const snapshot = await db.collection('pedidos')
       .where('estado', '==', 'Cobrado')
       .get();
@@ -265,7 +291,6 @@ app.get('/api/historial-dias', async (req, res) => {
       const p = doc.data();
       if (!p.fecha) return;
       const fechaDia = p.fecha.split('T')[0];
-      // Solo considerar si está en el rango de los últimos 30 días
       if (fechaDia < inicioStr || fechaDia > finStr) return;
       if (!resumenPorDia[fechaDia]) {
         resumenPorDia[fechaDia] = { total: 0, cantidad: 0 };
@@ -274,7 +299,6 @@ app.get('/api/historial-dias', async (req, res) => {
       resumenPorDia[fechaDia].cantidad += 1;
     });
 
-    // Convertir a array y ordenar por fecha descendente
     const resultado = Object.keys(resumenPorDia)
       .sort((a, b) => b.localeCompare(a))
       .map(fecha => ({
