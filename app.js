@@ -344,4 +344,13 @@ app.get('/api/historial-dias', async (req, res) => {
   }
 });
 
+app.get('/api/test-db', async (req, res) => {
+    try {
+        const testDoc = await db.collection('config').limit(1).get();
+        res.json({ estado: "🟢 Conexión a Firebase EXITOSA", documentos: testDoc.size });
+    } catch (error) {
+        res.status(500).json({ estado: "🔴 ERROR DE CONEXIÓN", detalle: error.message });
+    }
+});
+
 module.exports = app;
