@@ -78,7 +78,7 @@
         <button class="btn-cerrar-modal" onclick="cerrarCarrito()">Volver al Menú</button>
     </div>
 
-    <!-- SCRIPT TIPO MÓDULO PARA FIREBASE -->
+    <!-- SCRIPT TIPO MÓDULO PARA FIREBASE Y MENÚ LOCAL -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -95,7 +95,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Exponer funciones al entorno global para que funcionen con los "onclick" del HTML
+        // Exponer funciones al entorno global para los botones "onclick" del HTML
         window.mostrarCategoria = mostrarCategoria;
         window.agregarAlCarrito = agregarAlCarrito;
         window.eliminarDelCarrito = eliminarDelCarrito;
@@ -108,21 +108,34 @@
         let carrito = [];
         let fotoBase64 = null;
 
-        // Cargar menú con manejo de errores desde tu Vercel
-        fetch('/api/menu')
-            .then(r => {
-                if (!r.ok) throw new Error(`Error ${r.status}: ${r.statusText}`);
-                return r.json();
-            })
-            .then(menu => {
+        // MENÚ LOCAL ESTRUCTURADO (Cero consumo de cuotas de lectura)
+        const menuLocal = {
+            "Tortas Gigantes": [
+                { nombre: "Torta La Queen", precio: 120, descripcion: "Milanesa, pierna, jamón, queso amarillo, quesillo y aguacate." },
+                { nombre: "Torta Hawaiana", precio: 110, descripcion: "Milanesa, piña jugosa, jamón y queso fundido." },
+                { nombre: "Torta Cubana", precio: 130, descripcion: "Milanesa, salchicha, jamón, pierna, huevo y quesillo." },
+                { nombre: "Torta de Milanesa", precio: 95, descripcion: "Milanesa de res empanizada con frijoles y mayonesa." }
+            ],
+            "Bebidas y Extras": [
+                { nombre: "Agua de Horchata 1L", precio: 35, descripcion: "Agua fresca artesanal de la casa." },
+                { nombre: "Refresco 600ml", precio: 30, descripcion: "Coca-Cola, Sprite o Fanta." },
+                { nombre: "Papas a la Francesa", precio: 50, descripcion: "Porción grande con sazonador especial." }
+            ]
+        };
+
+        // Renderizar el menú directamente sin llamadas externas
+        function cargarMenuLocal() {
+            try {
                 let htmlBotones = '<div class="categorias-container">';
                 let htmlProductos = '';
                 let primera = true;
-                for (let categoria in menu) {
+
+                for (let categoria in menuLocal) {
                     let idCat = categoria.replace(/\s+/g, '-');
                     htmlBotones += `<button class="btn-categoria ${primera ? 'activa' : ''}" onclick="mostrarCategoria('${idCat}')" id="btn-${idCat}">${categoria}</button>`;
                     htmlProductos += `<div id="cat-${idCat}" class="categoria-seccion" style="display:${primera ? 'block' : 'none'};">`;
-                    menu[categoria].forEach(prod => {
+                    
+                    menuLocal[categoria].forEach(prod => {
                         let idInput = prod.nombre.replace(/\s+/g, '');
                         htmlProductos += `
                         <div class="producto-card">
@@ -142,10 +155,13 @@
                 }
                 htmlBotones += '</div>';
                 document.getElementById('contenedor-menu').innerHTML = htmlBotones + htmlProductos;
-            })
-            .catch(err => {
-                document.getElementById('contenedor-menu').innerHTML = `<div class="error-carga">⚠️ Error al cargar el menú: ${err.message}.<br>Verifica que el servidor esté funcionando.</div>`;
-            });
+            } catch (err) {
+                document.getElementById('contenedor-menu').innerHTML = `<div class="error-carga">⚠️ Error al renderizar el menú local: ${err.message}</div>`;
+            }
+        }
+
+        // Ejecutar carga inicial del menú
+        cargarMenuLocal();
 
         function mostrarCategoria(idCat) {
             document.querySelectorAll('.categoria-seccion').forEach(d => d.style.display = 'none');
@@ -259,7 +275,6 @@
 
             let total = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
             
-            // Estructura del pedido para Firebase
             let pedido = {
                 cliente: nombre,
                 items: carrito,
@@ -268,14 +283,12 @@
                 metodoPagoInicial: metodo,
                 origen: 'celular_cliente',
                 tieneFoto: fotoBase64 ? true : false,
-                fecha: serverTimestamp() // Hora oficial de Google
+                fecha: serverTimestamp()
             };
 
             try {
-                // 1. Guardar en la colección 'pedidos' de Firestore directamente
                 const docRef = await addDoc(collection(db, "pedidos"), pedido);
 
-                // 2. Si el cliente subió foto, separarla en la colección 'comprobantes'
                 if (fotoBase64) {
                     await addDoc(collection(db, "comprobantes"), {
                         pedidoId: docRef.id,
@@ -306,3 +319,5 @@
     </script>
 </body>
 </html>
+
+
