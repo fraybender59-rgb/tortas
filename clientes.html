@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -78,7 +78,6 @@
         <button class="btn-cerrar-modal" onclick="cerrarCarrito()">Volver al Menú</button>
     </div>
 
-    <!-- SCRIPT TIPO MÓDULO PARA FIREBASE Y MENÚ LOCAL COMPLETO -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -95,7 +94,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Exponer funciones al entorno global
         window.mostrarCategoria = mostrarCategoria;
         window.agregarAlCarrito = agregarAlCarrito;
         window.eliminarDelCarrito = eliminarDelCarrito;
@@ -108,46 +106,68 @@
         let carrito = [];
         let fotoBase64 = null;
 
-        // MENÚ COMPLETO DEL COMANDERO (Cero consultas de lectura a la API)
+        // MENÚ ACTUALIZADO DESDE EL COMANDERO
         const menuLocal = {
             "Sencillas": [
-                { nombre: "Milanesa", precio: 75, descripcion: "Torta sencilla de milanesa con frijoles, mayo, jitomate y cebolla." },
+                { nombre: "Milanesa", precio: 75, descripcion: "Torta sencilla de milanesa." },
                 { nombre: "Pierna", precio: 75, descripcion: "Torta sencilla de pierna horneada." },
                 { nombre: "Salchicha", precio: 75, descripcion: "Torta sencilla de salchicha." },
                 { nombre: "Jamón", precio: 75, descripcion: "Torta sencilla de jamón de pierna." },
-                { nombre: "Huevo", precio: 75, descripcion: "Torta sencilla de huevo preparado al gusto." },
+                { nombre: "Huevo", precio: 75, descripcion: "Torta sencilla de huevo al gusto." },
                 { nombre: "Chuleta", precio: 75, descripcion: "Torta sencilla de chuleta ahumada." },
-                { nombre: "Q. Puerco", precio: 75, descripcion: "Torta sencilla de queso de puerco fresco." }
+                { nombre: "Q. Puerco", precio: 75, descripcion: "Torta sencilla de queso de puerco." }
             ],
             "Clásicas": [
-                { nombre: "Milanesa con Queso", precio: 85, descripcion: "Milanesa crujiente con abundante quesillo fundido." },
-                { nombre: "Pierna con Queso", precio: 85, descripcion: "Pierna horneada acompañada de queso oaxaqueño." },
-                { nombre: "Cubana Clásica", precio: 95, descripcion: "Milanesa, jamón, salchicha y queso fundido." },
-                { nombre: "Hawaiana Clásica", precio: 90, descripcion: "Jamón, piña a la plancha y queso fundido." }
+                { nombre: "Verónica", precio: 80, descripcion: "Torta clásica Verónica." },
+                { nombre: "Tatiana", precio: 80, descripcion: "Torta clásica Tatiana." },
+                { nombre: "Mexiquense", precio: 80, descripcion: "Torta clásica Mexiquense." },
+                { nombre: "Alemana", precio: 80, descripcion: "Torta clásica Alemana." },
+                { nombre: "Texana", precio: 80, descripcion: "Torta clásica Texana." },
+                { nombre: "Pachuqueña", precio: 80, descripcion: "Torta clásica Pachuqueña." },
+                { nombre: "Española", precio: 80, descripcion: "Torta clásica Española." },
+                { nombre: "Argentina", precio: 80, descripcion: "Torta clásica Argentina." },
+                { nombre: "Tabasqueña", precio: 80, descripcion: "Torta clásica Tabasqueña." },
+                { nombre: "Jarocha", precio: 80, descripcion: "Torta clásica Jarocha." },
+                { nombre: "Veracruzana", precio: 80, descripcion: "Torta clásica Veracruzana." }
             ],
             "Combinadas": [
-                { nombre: "Milanesa y Pierna", precio: 95, descripcion: "Combinación de milanesa de res y pierna horneada." },
-                { nombre: "Milanesa y Salchicha", precio: 90, descripcion: "Milanesa clásica con salchicha dorada." },
-                { nombre: "Pierna y Quesillo", precio: 90, descripcion: "Pierna jugosa con doble porción de quesillo." }
+                { nombre: "Trailera", precio: 80, descripcion: "Torta combinada Trailera." },
+                { nombre: "Toluqueña", precio: 80, descripcion: "Torta combinada Toluqueña." },
+                { nombre: "Italiana", precio: 80, descripcion: "Torta combinada Italiana." },
+                { nombre: "Suiza", precio: 85, descripcion: "Torta combinada Suiza." },
+                { nombre: "Michoacana", precio: 80, descripcion: "Torta combinada Michoacana." },
+                { nombre: "Poblana", precio: 80, descripcion: "Torta combinada Poblana." },
+                { nombre: "Lambada", precio: 80, descripcion: "Torta combinada Lambada." },
+                { nombre: "Holandesa", precio: 80, descripcion: "Torta combinada Holandesa." },
+                { nombre: "Rusa", precio: 80, descripcion: "Torta combinada Rusa." },
+                { nombre: "Brasileña", precio: 80, descripcion: "Torta combinada Brasileña." },
+                { nombre: "Francesa", precio: 80, descripcion: "Torta combinada Francesa." },
+                { nombre: "Alejandra", precio: 80, descripcion: "Torta combinada Alejandra." },
+                { nombre: "Hawaiana", precio: 80, descripcion: "Torta combinada Hawaiana." },
+                { nombre: "Oaxaqueña", precio: 80, descripcion: "Torta combinada Oaxaqueña." }
             ],
             "Especiales": [
-                { nombre: "Torta Suiza", precio: 105, descripcion: "Tres tipos de queso fundido con ingrediente a elegir." },
-                { nombre: "Torta Texana", precio: 110, descripcion: "Milanesa, tocino, queso americano y salsa BBQ." },
-                { nombre: "Torta Argentina", precio: 110, descripcion: "Chorizo argentino, chimichurri artesanal y quesillo." }
+                { nombre: "Especial", precio: 85, descripcion: "Torta especial de la casa." },
+                { nombre: "Diabla", precio: 85, descripcion: "Torta especial Diabla." },
+                { nombre: "Manterola", precio: 85, descripcion: "Torta especial Manterola." },
+                { nombre: "Pecaminosa", precio: 85, descripcion: "Torta especial Pecaminosa." }
             ],
             "El Tamaño Si Importa": [
-                { nombre: "Torta La Queen", precio: 130, descripcion: "👑 La especialidad: Milanesa, pierna, jamón, queso amarillo, quesillo y aguacate." },
-                { nombre: "Mega Cubana Queen", precio: 140, descripcion: "Milanesa, salchicha, jamón, pierna, huevo, quesillo y tocino extra." },
-                { nombre: "Torta Godzilla", precio: 150, descripcion: "Todas las carnes de la casa reunidas en un gigantesco pan artesanal." }
+                { nombre: "Insaciable", precio: 90, descripcion: "Torta gigante Insaciable." },
+                { nombre: "Vanidosa", precio: 90, descripcion: "Torta gigante Vanidosa." },
+                { nombre: "Caprichosa", precio: 90, descripcion: "Torta gigante Caprichosa." },
+                { nombre: "Niña Pobre", precio: 90, descripcion: "Torta gigante Niña Pobre." },
+                { nombre: "Bomba", precio: 90, descripcion: "Torta gigante Bomba." },
+                { nombre: "Suspiro de Monja", precio: 90, descripcion: "Torta gigante Suspiro de Monja." },
+                { nombre: "Cubana", precio: 135, descripcion: "Torta gigante Cubana completa." }
             ],
             "Extras y Bebidas": [
-                { nombre: "Agua de Horchata 1L", precio: 35, descripcion: "Agua fresca artesanal de la casa." },
-                { nombre: "Refresco 600ml", precio: 30, descripcion: "Coca-Cola, Sprite, Fanta o Sidral." },
-                { nombre: "Papas a la Francesa", precio: 50, descripcion: "Porción grande crujiente con sazonador de la casa." }
+                { nombre: "Ingrediente Extra", precio: 5, descripcion: "Porción o ingrediente extra." },
+                { nombre: "Coca Cola", precio: 30, descripcion: "Refresco Coca Cola." },
+                { nombre: "Agua Embotellada", precio: 20, descripcion: "Agua embotellada." }
             ]
         };
 
-        // Renderizado automático del menú
         function cargarMenuLocal() {
             try {
                 let htmlBotones = '<div class="categorias-container">';
