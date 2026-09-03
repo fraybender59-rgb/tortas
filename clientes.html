@@ -78,7 +78,7 @@
         <button class="btn-cerrar-modal" onclick="cerrarCarrito()">Volver al Menú</button>
     </div>
 
-    <!-- SCRIPT TIPO MÓDULO PARA FIREBASE Y MENÚ LOCAL -->
+    <!-- SCRIPT TIPO MÓDULO PARA FIREBASE Y MENÚ LOCAL COMPLETO -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -95,7 +95,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Exponer funciones al entorno global para los botones "onclick" del HTML
+        // Exponer funciones al entorno global
         window.mostrarCategoria = mostrarCategoria;
         window.agregarAlCarrito = agregarAlCarrito;
         window.eliminarDelCarrito = eliminarDelCarrito;
@@ -108,22 +108,46 @@
         let carrito = [];
         let fotoBase64 = null;
 
-        // MENÚ LOCAL ESTRUCTURADO (Cero consumo de cuotas de lectura)
+        // MENÚ COMPLETO DEL COMANDERO (Cero consultas de lectura a la API)
         const menuLocal = {
-            "Tortas Gigantes": [
-                { nombre: "Torta La Queen", precio: 120, descripcion: "Milanesa, pierna, jamón, queso amarillo, quesillo y aguacate." },
-                { nombre: "Torta Hawaiana", precio: 110, descripcion: "Milanesa, piña jugosa, jamón y queso fundido." },
-                { nombre: "Torta Cubana", precio: 130, descripcion: "Milanesa, salchicha, jamón, pierna, huevo y quesillo." },
-                { nombre: "Torta de Milanesa", precio: 95, descripcion: "Milanesa de res empanizada con frijoles y mayonesa." }
+            "Sencillas": [
+                { nombre: "Milanesa", precio: 75, descripcion: "Torta sencilla de milanesa con frijoles, mayo, jitomate y cebolla." },
+                { nombre: "Pierna", precio: 75, descripcion: "Torta sencilla de pierna horneada." },
+                { nombre: "Salchicha", precio: 75, descripcion: "Torta sencilla de salchicha." },
+                { nombre: "Jamón", precio: 75, descripcion: "Torta sencilla de jamón de pierna." },
+                { nombre: "Huevo", precio: 75, descripcion: "Torta sencilla de huevo preparado al gusto." },
+                { nombre: "Chuleta", precio: 75, descripcion: "Torta sencilla de chuleta ahumada." },
+                { nombre: "Q. Puerco", precio: 75, descripcion: "Torta sencilla de queso de puerco fresco." }
             ],
-            "Bebidas y Extras": [
+            "Clásicas": [
+                { nombre: "Milanesa con Queso", precio: 85, descripcion: "Milanesa crujiente con abundante quesillo fundido." },
+                { nombre: "Pierna con Queso", precio: 85, descripcion: "Pierna horneada acompañada de queso oaxaqueño." },
+                { nombre: "Cubana Clásica", precio: 95, descripcion: "Milanesa, jamón, salchicha y queso fundido." },
+                { nombre: "Hawaiana Clásica", precio: 90, descripcion: "Jamón, piña a la plancha y queso fundido." }
+            ],
+            "Combinadas": [
+                { nombre: "Milanesa y Pierna", precio: 95, descripcion: "Combinación de milanesa de res y pierna horneada." },
+                { nombre: "Milanesa y Salchicha", precio: 90, descripcion: "Milanesa clásica con salchicha dorada." },
+                { nombre: "Pierna y Quesillo", precio: 90, descripcion: "Pierna jugosa con doble porción de quesillo." }
+            ],
+            "Especiales": [
+                { nombre: "Torta Suiza", precio: 105, descripcion: "Tres tipos de queso fundido con ingrediente a elegir." },
+                { nombre: "Torta Texana", precio: 110, descripcion: "Milanesa, tocino, queso americano y salsa BBQ." },
+                { nombre: "Torta Argentina", precio: 110, descripcion: "Chorizo argentino, chimichurri artesanal y quesillo." }
+            ],
+            "El Tamaño Si Importa": [
+                { nombre: "Torta La Queen", precio: 130, descripcion: "👑 La especialidad: Milanesa, pierna, jamón, queso amarillo, quesillo y aguacate." },
+                { nombre: "Mega Cubana Queen", precio: 140, descripcion: "Milanesa, salchicha, jamón, pierna, huevo, quesillo y tocino extra." },
+                { nombre: "Torta Godzilla", precio: 150, descripcion: "Todas las carnes de la casa reunidas en un gigantesco pan artesanal." }
+            ],
+            "Extras y Bebidas": [
                 { nombre: "Agua de Horchata 1L", precio: 35, descripcion: "Agua fresca artesanal de la casa." },
-                { nombre: "Refresco 600ml", precio: 30, descripcion: "Coca-Cola, Sprite o Fanta." },
-                { nombre: "Papas a la Francesa", precio: 50, descripcion: "Porción grande con sazonador especial." }
+                { nombre: "Refresco 600ml", precio: 30, descripcion: "Coca-Cola, Sprite, Fanta o Sidral." },
+                { nombre: "Papas a la Francesa", precio: 50, descripcion: "Porción grande crujiente con sazonador de la casa." }
             ]
         };
 
-        // Renderizar el menú directamente sin llamadas externas
+        // Renderizado automático del menú
         function cargarMenuLocal() {
             try {
                 let htmlBotones = '<div class="categorias-container">';
@@ -131,12 +155,12 @@
                 let primera = true;
 
                 for (let categoria in menuLocal) {
-                    let idCat = categoria.replace(/\s+/g, '-');
+                    let idCat = categoria.replace(/[^a-zA-Z0-9]/g, '-');
                     htmlBotones += `<button class="btn-categoria ${primera ? 'activa' : ''}" onclick="mostrarCategoria('${idCat}')" id="btn-${idCat}">${categoria}</button>`;
                     htmlProductos += `<div id="cat-${idCat}" class="categoria-seccion" style="display:${primera ? 'block' : 'none'};">`;
                     
                     menuLocal[categoria].forEach(prod => {
-                        let idInput = prod.nombre.replace(/\s+/g, '');
+                        let idInput = prod.nombre.replace(/[^a-zA-Z0-9]/g, '');
                         htmlProductos += `
                         <div class="producto-card">
                             <div class="producto-header">
@@ -160,7 +184,6 @@
             }
         }
 
-        // Ejecutar carga inicial del menú
         cargarMenuLocal();
 
         function mostrarCategoria(idCat) {
@@ -319,5 +342,4 @@
     </script>
 </body>
 </html>
-
 
