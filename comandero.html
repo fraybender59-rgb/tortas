@@ -19,12 +19,14 @@
     .item-btn { padding: 12px 8px; border: 1px solid #ddd; background: #fafafa; border-radius: 6px; text-align: center; cursor: pointer; font-weight: bold; display: flex; flex-direction: column; justify-content: space-between; min-height: 75px; transition: 0.2s; }
     .item-btn:hover { background: #ffebee; border-color: #d32f2f; transform: translateY(-2px); }
     .item-btn .price { font-size: 0.9em; color: #2e7d32; margin-top: 5px; }
+    .item-btn .desc { font-size: 0.7em; color: #666; margin-top: 3px; }
     .order-list { list-style: none; margin: 15px 0; max-height: 250px; overflow-y: auto; border-top: 1px solid #eee; }
     .order-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
     .remove-btn { background: #ff5252; color: white; border: none; border-radius: 3px; padding: 3px 8px; cursor: pointer; font-weight: bold; }
     .input-field { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
     .btn-send { width: 100%; padding: 12px; background: #2e7d32; color: white; font-size: 16px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; transition: 0.2s; }
     .btn-send:hover { background: #1b5e20; }
+    .error-msg { color: #f44336; text-align: center; padding: 20px; background: #ffebee; border-radius: 8px; margin: 20px 0; }
   </style>
 </head>
 <body>
@@ -48,17 +50,74 @@
   </div>
 
   <script>
-    let menuData = {};
+    // MENÚ CON DESCRIPCIONES DETALLADAS (igual que en clientes.html)
+    const menuData = {
+      "Sencillas": [
+        { nombre: "Milanesa", precio: 75, descripcion: "Torta sencilla de milanesa de res." },
+        { nombre: "Pierna", precio: 75, descripcion: "Torta sencilla de pierna horneada." },
+        { nombre: "Salchicha", precio: 75, descripcion: "Torta sencilla de salchicha." },
+        { nombre: "Jamón", precio: 75, descripcion: "Torta sencilla de jamón de pierna." },
+        { nombre: "Huevo", precio: 75, descripcion: "Torta sencilla de huevo al gusto." },
+        { nombre: "Chuleta", precio: 75, descripcion: "Torta sencilla de chuleta ahumada." },
+        { nombre: "Q. Puerco", precio: 75, descripcion: "Torta sencilla de queso de puerco." }
+      ],
+      "Clásicas": [
+        { nombre: "Verónica", precio: 80, descripcion: "Milanesa, salchicha y queso Oaxaca." },
+        { nombre: "Tatiana", precio: 80, descripcion: "Milanesa, pierna y queso Oaxaca." },
+        { nombre: "Mexiquense", precio: 80, descripcion: "Milanesa, chorizo y queso Oaxaca." },
+        { nombre: "Alemana", precio: 80, descripcion: "Milanesa, piña y queso Oaxaca." },
+        { nombre: "Texana", precio: 80, descripcion: "Milanesa, chuleta y queso Oaxaca." },
+        { nombre: "Pachuqueña", precio: 80, descripcion: "Milanesa, pierna y piña." },
+        { nombre: "Española", precio: 80, descripcion: "Milanesa, pierna y huevo." },
+        { nombre: "Argentina", precio: 80, descripcion: "Milanesa, queso amarillo y queso Oaxaca." },
+        { nombre: "Tabasqueña", precio: 80, descripcion: "Milanesa, huevo y queso Oaxaca." },
+        { nombre: "Jarocha", precio: 80, descripcion: "Milanesa, queso de puerco y queso blanco." },
+        { nombre: "Veracruzana", precio: 80, descripcion: "Milanesa, salchicha y queso de puerco." }
+      ],
+      "Combinadas": [
+        { nombre: "Trailera", precio: 80, descripcion: "Salchicha, pierna y queso Oaxaca." },
+        { nombre: "Toluqueña", precio: 80, descripcion: "Salchicha, chorizo y queso Oaxaca." },
+        { nombre: "Italiana", precio: 80, descripcion: "Jamón, queso amarillo y queso Oaxaca." },
+        { nombre: "Suiza", precio: 85, descripcion: "Queso amarillo, queso Oaxaca y queso blanco." },
+        { nombre: "Michoacana", precio: 80, descripcion: "Salchicha, jamón y queso Oaxaca." },
+        { nombre: "Poblana", precio: 80, descripcion: "Salchicha, huevo y chorizo." },
+        { nombre: "Lambada", precio: 80, descripcion: "Pierna, huevo y chorizo." },
+        { nombre: "Holandesa", precio: 80, descripcion: "Salchicha, queso de puerco y jamón." },
+        { nombre: "Rusa", precio: 80, descripcion: "Huevo, jamón y queso Oaxaca." },
+        { nombre: "Brasileña", precio: 80, descripcion: "Huevo, salchicha y queso Oaxaca." },
+        { nombre: "Francesa", precio: 80, descripcion: "Pierna, queso amarillo y queso Oaxaca." },
+        { nombre: "Alejandra", precio: 80, descripcion: "Pierna, piña y queso Oaxaca." },
+        { nombre: "Hawaiana", precio: 80, descripcion: "Jamón, piña y queso Oaxaca." },
+        { nombre: "Oaxaqueña", precio: 80, descripcion: "Pierna, huevo y queso Oaxaca." }
+      ],
+      "Especiales": [
+        { nombre: "Especial", precio: 85, descripcion: "Milanesa, pierna, piña y queso Oaxaca." },
+        { nombre: "Diabla", precio: 85, descripcion: "Milanesa, chorizo, piña y queso Oaxaca." },
+        { nombre: "Manterola", precio: 85, descripcion: "Milanesa, pierna, chuleta y queso Oaxaca." },
+        { nombre: "Pecaminosa", precio: 85, descripcion: "Milanesa, huevo, salchicha y queso de puerco." },
+        { nombre: "Torta La Queen", precio: 85, descripcion: "Milanesa, pierna, jamón, queso amarillo, quesillo y aguacate." },
+        { nombre: "Mega Cubana Queen", precio: 150, descripcion: "Milanesa, salchicha, jamón, pierna, huevo, quesillo y tocino extra." }
+      ],
+      "El Tamaño Si Importa": [
+        { nombre: "Insaciable", precio: 90, descripcion: "Milanesa, pierna, salchicha, chuleta y queso Oaxaca." },
+        { nombre: "Vanidosa", precio: 90, descripcion: "Milanesa, pierna, chorizo, piña y queso Oaxaca." },
+        { nombre: "Caprichosa", precio: 90, descripcion: "Milanesa, chorizo, jamón, salchicha y queso Oaxaca." },
+        { nombre: "Niña Pobre", precio: 90, descripcion: "Milanesa, huevo, chorizo, chuleta y queso Oaxaca." },
+        { nombre: "Bomba", precio: 90, descripcion: "Milanesa, huevo, chorizo, salchicha y queso Oaxaca." },
+        { nombre: "Suspiro de Monja", precio: 90, descripcion: "Milanesa, pierna, chorizo, huevo y queso Oaxaca." },
+        { nombre: "Cubana", precio: 135, descripcion: "Todos los ingredientes: milanesa, pierna, salchicha, jamón, huevo, chuleta, queso de puerco, queso Oaxaca, piña, chorizo y tocino." }
+      ],
+      "Extras y Bebidas": [
+        { nombre: "Ingrediente Extra", precio: 5, descripcion: "Porción o ingrediente extra a tu torta." },
+        { nombre: "Coca Cola", precio: 30, descripcion: "Refresco Coca Cola 600 ml." },
+        { nombre: "Agua Embotellada", precio: 20, descripcion: "Agua embotellada 500 ml." }
+      ]
+    };
+
     let currentOrder = [];
 
-    async function init() {
-      try {
-        const res = await fetch('/api/menu');
-        menuData = await res.json();
-        renderCategories();
-      } catch (e) {
-        console.error("Error al cargar menú", e);
-      }
+    function init() {
+      renderCategories();
     }
 
     function renderCategories() {
@@ -85,7 +144,11 @@
       (menuData[category] || []).forEach(item => {
         const div = document.createElement('div');
         div.className = 'item-btn';
-        div.innerHTML = `<span>${item.nombre}</span><span class="price">$${item.precio}</span>`;
+        div.innerHTML = `
+          <span>${item.nombre}</span>
+          <span class="price">$${item.precio}</span>
+          <span class="desc">${item.descripcion || ''}</span>
+        `;
         div.onclick = () => agregarAlPedido(item);
         prodContainer.appendChild(div);
       });
@@ -133,19 +196,19 @@
         origen: 'staff'
       };
 
-      const res = await fetch('/api/pedidos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pedido)
-      });
-
-      if (res.ok) {
+      try {
+        const res = await fetch('/api/pedidos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pedido)
+        });
+        if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
         alert('¡Pedido enviado a cocina!');
         currentOrder = [];
         document.getElementById('mesaInput').value = '';
         renderOrder();
-      } else {
-        alert('Error al enviar el pedido.');
+      } catch (e) {
+        alert('Error al enviar el pedido: ' + e.message);
       }
     }
 

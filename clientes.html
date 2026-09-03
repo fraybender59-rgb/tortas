@@ -106,10 +106,10 @@
         let carrito = [];
         let fotoBase64 = null;
 
-        // MENÚ ACTUALIZADO CON LOS DOS PRODUCTOS ESPECIALES AGREGADOS
+        // MENÚ CON DESCRIPCIONES DETALLADAS
         const menuLocal = {
             "Sencillas": [
-                { nombre: "Milanesa", precio: 75, descripcion: "Torta sencilla de milanesa." },
+                { nombre: "Milanesa", precio: 75, descripcion: "Torta sencilla de milanesa de res." },
                 { nombre: "Pierna", precio: 75, descripcion: "Torta sencilla de pierna horneada." },
                 { nombre: "Salchicha", precio: 75, descripcion: "Torta sencilla de salchicha." },
                 { nombre: "Jamón", precio: 75, descripcion: "Torta sencilla de jamón de pierna." },
@@ -118,55 +118,55 @@
                 { nombre: "Q. Puerco", precio: 75, descripcion: "Torta sencilla de queso de puerco." }
             ],
             "Clásicas": [
-                { nombre: "Verónica", precio: 80, descripcion: "Torta clásica Verónica." },
-                { nombre: "Tatiana", precio: 80, descripcion: "Torta clásica Tatiana." },
-                { nombre: "Mexiquense", precio: 80, descripcion: "Torta clásica Mexiquense." },
-                { nombre: "Alemana", precio: 80, descripcion: "Torta clásica Alemana." },
-                { nombre: "Texana", precio: 80, descripcion: "Torta clásica Texana." },
-                { nombre: "Pachuqueña", precio: 80, descripcion: "Torta clásica Pachuqueña." },
-                { nombre: "Española", precio: 80, descripcion: "Torta clásica Española." },
-                { nombre: "Argentina", precio: 80, descripcion: "Torta clásica Argentina." },
-                { nombre: "Tabasqueña", precio: 80, descripcion: "Torta clásica Tabasqueña." },
-                { nombre: "Jarocha", precio: 80, descripcion: "Torta clásica Jarocha." },
-                { nombre: "Veracruzana", precio: 80, descripcion: "Torta clásica Veracruzana." }
+                { nombre: "Verónica", precio: 80, descripcion: "Milanesa, salchicha y queso Oaxaca." },
+                { nombre: "Tatiana", precio: 80, descripcion: "Milanesa, pierna y queso Oaxaca." },
+                { nombre: "Mexiquense", precio: 80, descripcion: "Milanesa, chorizo y queso Oaxaca." },
+                { nombre: "Alemana", precio: 80, descripcion: "Milanesa, piña y queso Oaxaca." },
+                { nombre: "Texana", precio: 80, descripcion: "Milanesa, chuleta y queso Oaxaca." },
+                { nombre: "Pachuqueña", precio: 80, descripcion: "Milanesa, pierna y piña." },
+                { nombre: "Española", precio: 80, descripcion: "Milanesa, pierna y huevo." },
+                { nombre: "Argentina", precio: 80, descripcion: "Milanesa, queso amarillo y queso Oaxaca." },
+                { nombre: "Tabasqueña", precio: 80, descripcion: "Milanesa, huevo y queso Oaxaca." },
+                { nombre: "Jarocha", precio: 80, descripcion: "Milanesa, queso de puerco y queso blanco." },
+                { nombre: "Veracruzana", precio: 80, descripcion: "Milanesa, salchicha y queso de puerco." }
             ],
             "Combinadas": [
-                { nombre: "Trailera", precio: 80, descripcion: "Torta combinada Trailera." },
-                { nombre: "Toluqueña", precio: 80, descripcion: "Torta combinada Toluqueña." },
-                { nombre: "Italiana", precio: 80, descripcion: "Torta combinada Italiana." },
-                { nombre: "Suiza", precio: 85, descripcion: "Torta combinada Suiza." },
-                { nombre: "Michoacana", precio: 80, descripcion: "Torta combinada Michoacana." },
-                { nombre: "Poblana", precio: 80, descripcion: "Torta combinada Poblana." },
-                { nombre: "Lambada", precio: 80, descripcion: "Torta combinada Lambada." },
-                { nombre: "Holandesa", precio: 80, descripcion: "Torta combinada Holandesa." },
-                { nombre: "Rusa", precio: 80, descripcion: "Torta combinada Rusa." },
-                { nombre: "Brasileña", precio: 80, descripcion: "Torta combinada Brasileña." },
-                { nombre: "Francesa", precio: 80, descripcion: "Torta combinada Francesa." },
-                { nombre: "Alejandra", precio: 80, descripcion: "Torta combinada Alejandra." },
-                { nombre: "Hawaiana", precio: 80, descripcion: "Torta combinada Hawaiana." },
-                { nombre: "Oaxaqueña", precio: 80, descripcion: "Torta combinada Oaxaqueña." }
+                { nombre: "Trailera", precio: 80, descripcion: "Salchicha, pierna y queso Oaxaca." },
+                { nombre: "Toluqueña", precio: 80, descripcion: "Salchicha, chorizo y queso Oaxaca." },
+                { nombre: "Italiana", precio: 80, descripcion: "Jamón, queso amarillo y queso Oaxaca." },
+                { nombre: "Suiza", precio: 85, descripcion: "Queso amarillo, queso Oaxaca y queso blanco." },
+                { nombre: "Michoacana", precio: 80, descripcion: "Salchicha, jamón y queso Oaxaca." },
+                { nombre: "Poblana", precio: 80, descripcion: "Salchicha, huevo y chorizo." },
+                { nombre: "Lambada", precio: 80, descripcion: "Pierna, huevo y chorizo." },
+                { nombre: "Holandesa", precio: 80, descripcion: "Salchicha, queso de puerco y jamón." },
+                { nombre: "Rusa", precio: 80, descripcion: "Huevo, jamón y queso Oaxaca." },
+                { nombre: "Brasileña", precio: 80, descripcion: "Huevo, salchicha y queso Oaxaca." },
+                { nombre: "Francesa", precio: 80, descripcion: "Pierna, queso amarillo y queso Oaxaca." },
+                { nombre: "Alejandra", precio: 80, descripcion: "Pierna, piña y queso Oaxaca." },
+                { nombre: "Hawaiana", precio: 80, descripcion: "Jamón, piña y queso Oaxaca." },
+                { nombre: "Oaxaqueña", precio: 80, descripcion: "Pierna, huevo y queso Oaxaca." }
             ],
             "Especiales": [
-                { nombre: "Especial", precio: 85, descripcion: "Torta especial de la casa." },
-                { nombre: "Diabla", precio: 85, descripcion: "Torta especial Diabla." },
-                { nombre: "Manterola", precio: 85, descripcion: "Torta especial Manterola." },
-                { nombre: "Pecaminosa", precio: 85, descripcion: "Torta especial Pecaminosa." },
+                { nombre: "Especial", precio: 85, descripcion: "Milanesa, pierna, piña y queso Oaxaca." },
+                { nombre: "Diabla", precio: 85, descripcion: "Milanesa, chorizo, piña y queso Oaxaca." },
+                { nombre: "Manterola", precio: 85, descripcion: "Milanesa, pierna, chuleta y queso Oaxaca." },
+                { nombre: "Pecaminosa", precio: 85, descripcion: "Milanesa, huevo, salchicha y queso de puerco." },
                 { nombre: "Torta La Queen", precio: 85, descripcion: "Milanesa, pierna, jamón, queso amarillo, quesillo y aguacate." },
                 { nombre: "Mega Cubana Queen", precio: 150, descripcion: "Milanesa, salchicha, jamón, pierna, huevo, quesillo y tocino extra." }
             ],
             "El Tamaño Si Importa": [
-                { nombre: "Insaciable", precio: 90, descripcion: "Torta gigante Insaciable." },
-                { nombre: "Vanidosa", precio: 90, descripcion: "Torta gigante Vanidosa." },
-                { nombre: "Caprichosa", precio: 90, descripcion: "Torta gigante Caprichosa." },
-                { nombre: "Niña Pobre", precio: 90, descripcion: "Torta gigante Niña Pobre." },
-                { nombre: "Bomba", precio: 90, descripcion: "Torta gigante Bomba." },
-                { nombre: "Suspiro de Monja", precio: 90, descripcion: "Torta gigante Suspiro de Monja." },
-                { nombre: "Cubana", precio: 135, descripcion: "Torta gigante Cubana completa." }
+                { nombre: "Insaciable", precio: 90, descripcion: "Milanesa, pierna, salchicha, chuleta y queso Oaxaca." },
+                { nombre: "Vanidosa", precio: 90, descripcion: "Milanesa, pierna, chorizo, piña y queso Oaxaca." },
+                { nombre: "Caprichosa", precio: 90, descripcion: "Milanesa, chorizo, jamón, salchicha y queso Oaxaca." },
+                { nombre: "Niña Pobre", precio: 90, descripcion: "Milanesa, huevo, chorizo, chuleta y queso Oaxaca." },
+                { nombre: "Bomba", precio: 90, descripcion: "Milanesa, huevo, chorizo, salchicha y queso Oaxaca." },
+                { nombre: "Suspiro de Monja", precio: 90, descripcion: "Milanesa, pierna, chorizo, huevo y queso Oaxaca." },
+                { nombre: "Cubana", precio: 135, descripcion: "Todos los ingredientes: milanesa, pierna, salchicha, jamón, huevo, chuleta, queso de puerco, queso Oaxaca, piña, chorizo y tocino." }
             ],
             "Extras y Bebidas": [
-                { nombre: "Ingrediente Extra", precio: 5, descripcion: "Porción o ingrediente extra." },
-                { nombre: "Coca Cola", precio: 30, descripcion: "Refresco Coca Cola." },
-                { nombre: "Agua Embotellada", precio: 20, descripcion: "Agua embotellada." }
+                { nombre: "Ingrediente Extra", precio: 5, descripcion: "Porción o ingrediente extra a tu torta." },
+                { nombre: "Coca Cola", precio: 30, descripcion: "Refresco Coca Cola 600 ml." },
+                { nombre: "Agua Embotellada", precio: 20, descripcion: "Agua embotellada 500 ml." }
             ]
         };
 
@@ -326,7 +326,7 @@
                 total: total,
                 estado: "Pendiente",
                 metodoPagoInicial: metodo,
-                origen: 'cliente', // CORREGIDO: antes era 'celular_cliente'
+                origen: 'cliente',
                 tieneFoto: fotoBase64 ? true : false,
                 fecha: serverTimestamp()
             };
