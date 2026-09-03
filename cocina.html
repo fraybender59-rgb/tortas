@@ -69,6 +69,10 @@
         const estado = obtenerEstado(minutos);
         const badge = `<span class="badge ${estado.badge}">${estado.texto} ${minutos} min</span>`;
 
+        // Mejor detección de origen: si contiene 'cliente' -> Cliente, sino Staff
+        const esCliente = p.origen && p.origen.toLowerCase().includes('cliente');
+        const origenTexto = esCliente ? '👤 Cliente' : '👨‍🍳 Staff';
+
         let itemsHtml = '';
         if (p.items && p.items.length) {
           p.items.forEach(item => {
@@ -89,7 +93,7 @@
               <span class="cliente">${p.cliente}</span>
               ${badge}
             </div>
-            <div style="font-size:0.85em; color:#666;">Origen: ${p.origen === 'cliente' ? '👤 Cliente' : '👨‍🍳 Staff'}</div>
+            <div style="font-size:0.85em; color:#666;">Origen: ${origenTexto}</div>
             <div class="items">${itemsHtml}</div>
             <div class="total">Total: $${parseFloat(p.total || 0).toFixed(2)}</div>
           </div>
@@ -111,7 +115,7 @@
       }
     }
 
-    // Auto-actualizar cada 15 segundos (reducido para menos consumo)
+    // Auto-actualizar cada 15 segundos
     setInterval(cargarPedidos, 15000);
     cargarPedidos();
   </script>

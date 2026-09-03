@@ -151,7 +151,6 @@
                 { nombre: "Diabla", precio: 85, descripcion: "Torta especial Diabla." },
                 { nombre: "Manterola", precio: 85, descripcion: "Torta especial Manterola." },
                 { nombre: "Pecaminosa", precio: 85, descripcion: "Torta especial Pecaminosa." },
-                // NUEVOS PRODUCTOS AGREGADOS
                 { nombre: "Torta La Queen", precio: 85, descripcion: "Milanesa, pierna, jamón, queso amarillo, quesillo y aguacate." },
                 { nombre: "Mega Cubana Queen", precio: 150, descripcion: "Milanesa, salchicha, jamón, pierna, huevo, quesillo y tocino extra." }
             ],
@@ -327,7 +326,7 @@
                 total: total,
                 estado: "Pendiente",
                 metodoPagoInicial: metodo,
-                origen: 'celular_cliente',
+                origen: 'cliente', // CORREGIDO: antes era 'celular_cliente'
                 tieneFoto: fotoBase64 ? true : false,
                 fecha: serverTimestamp()
             };
