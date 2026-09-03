@@ -8,19 +8,14 @@
     * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
     body { padding: 20px; background: #f4f4f9; color: #333; }
     h1 { margin-bottom: 20px; text-align: center; color: #b71c1c; }
-    
     .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    
     .search-bar { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; }
     .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
-    
     .inv-card { background: #fafafa; border: 1px solid #e0e0e0; padding: 15px; border-radius: 8px; text-align: center; transition: 0.3s; }
     .inv-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #b71c1c; }
-    
     .item-name { font-size: 1.1em; font-weight: bold; margin-bottom: 10px; color: #333; }
     .item-stock { font-size: 1.8em; font-weight: bold; color: #2e7d32; margin-bottom: 15px; }
     .item-stock.bajo { color: #d32f2f; }
-    
     .controls { display: flex; justify-content: center; align-items: center; gap: 5px; }
     .input-cant { width: 60px; padding: 8px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
     .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
@@ -28,14 +23,12 @@
     .btn-add:hover { background: #1565c0; }
     .btn-sub { background: #ff9800; }
     .btn-sub:hover { background: #e65100; }
-
     .nav-btn { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #333; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
     .nav-btn:hover { background: #555; }
-
     .btn-refresh { display: inline-block; margin-left: 15px; padding: 10px 20px; background: #0d9488; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
     .btn-refresh:hover { background: #0a7a6e; }
-
     .header-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 20px; }
+    .error-msg { color: #f44336; text-align: center; grid-column: 1 / -1; padding: 20px; background: #ffebee; border-radius: 8px; }
   </style>
 </head>
 <body>
@@ -57,18 +50,37 @@
   <script>
     let inventarioGlobal = {};
     let primeraCarga = true;
+    let intervaloId = null;
+    let errorMostrado = false;
 
     async function cargarInventario() {
       try {
         const res = await fetch('/api/inventario');
+        if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
         inventarioGlobal = await res.json();
         renderInventario();
+        errorMostrado = false;
+        // Si había error, reiniciar el intervalo
+        if (!intervaloId) {
+          intervaloId = setInterval(cargarInventario, 30000);
+        }
       } catch (e) {
         console.error("Error al cargar inventario", e);
-        // Mostrar mensaje de error en el contenedor
         const container = document.getElementById('inventoryContainer');
         if (primeraCarga) {
-          container.innerHTML = '<p style="color:#f44336; text-align:center; grid-column:1/-1;">⚠️ Error al cargar el inventario. Verifica tu conexión o la cuota de Firestore.</p>';
+          container.innerHTML = `<div class="error-msg">⚠️ Error al cargar el inventario: ${e.message}.<br>Verifica tu conexión o la cuota de Firestore. Puedes intentar recargar manualmente con el botón "Actualizar".</div>`;
+        } else if (!errorMostrado) {
+          // Mostrar mensaje en la parte superior
+          const msg = document.createElement('div');
+          msg.className = 'error-msg';
+          msg.innerText = `⚠️ Error al actualizar: ${e.message}. Intenta recargar manualmente.`;
+          container.prepend(msg);
+          errorMostrado = true;
+        }
+        // Detener el intervalo para no saturar
+        if (intervaloId) {
+          clearInterval(intervaloId);
+          intervaloId = null;
         }
       }
     }
@@ -84,7 +96,6 @@
           const div = document.createElement('div');
           div.className = 'inv-card';
           const idNombre = nombre.replace(/[^a-zA-Z0-9]/g, '_'); 
-          
           div.innerHTML = `
             <div class="item-name">${nombre}</div>
             <div id="stock_${idNombre}" class="item-stock ${inventarioGlobal[nombre] <= 5 ? 'bajo' : ''}">${inventarioGlobal[nombre]} pts</div>
@@ -107,6 +118,9 @@
             stockEl.className = 'item-stock ' + (inventarioGlobal[nombre] <= 5 ? 'bajo' : '');
           }
         });
+        // Remover mensajes de error previos
+        const errors = container.querySelectorAll('.error-msg');
+        errors.forEach(el => el.remove());
       }
 
       // Aplicar filtro de búsqueda
@@ -137,10 +151,12 @@
           input.value = 1; 
           cargarInventario(); // Recargar para reflejar cambios
         } else {
-          alert("Error al actualizar el inventario.");
+          const errorText = await res.text();
+          alert("Error al actualizar el inventario: " + errorText);
         }
       } catch (e) {
         console.error("Error", e);
+        alert("Error de red al modificar el inventario.");
       }
     }
 
@@ -151,8 +167,7 @@
     // Carga inicial
     cargarInventario();
     
-    // Actualización automática cada 15 segundos (reduce consumo de cuota)
-    setInterval(cargarInventario, 15000);
+    // No inicializamos intervalo automáticamente; se inicia en la primera carga exitosa
   </script>
 </body>
 </html>

@@ -27,6 +27,7 @@
     .sin-pedidos { text-align: center; color: #999; font-size: 1.2em; padding: 40px; grid-column: 1 / -1; }
     .actualizar { display: block; margin: 20px auto; padding: 10px 30px; background: #1976d2; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; }
     .actualizar:hover { background: #1565c0; }
+    .error-msg { color: #f44336; text-align: center; padding: 20px; grid-column: 1 / -1; background: #ffebee; border-radius: 8px; }
   </style>
 </head>
 <body>
@@ -101,15 +102,17 @@
     async function cargarPedidos() {
       try {
         const res = await fetch('/api/pedidos');
+        if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
         pedidos = await res.json();
         renderizarPedidos();
       } catch (e) {
         console.error('Error al cargar pedidos:', e);
+        document.getElementById('pedidosContainer').innerHTML = `<div class="error-msg">⚠️ Error al cargar pedidos: ${e.message}</div>`;
       }
     }
 
-    // Auto-actualizar cada 10 segundos
-    setInterval(cargarPedidos, 10000);
+    // Auto-actualizar cada 15 segundos (reducido para menos consumo)
+    setInterval(cargarPedidos, 15000);
     cargarPedidos();
   </script>
 </body>

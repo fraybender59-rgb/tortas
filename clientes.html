@@ -35,6 +35,7 @@
         .btn-upload { background: #3f51b5; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: monospace; }
         .estado-foto-ok { color: #8bc34a; font-weight: bold; }
         .estado-foto-error { color: #f44336; }
+        .error-carga { color: #f44336; text-align: center; padding: 20px; background: #1a1a22; border-radius: 8px; margin: 20px 0; }
     </style>
 </head>
 <body>
@@ -81,36 +82,45 @@
         let carrito = [];
         let fotoBase64 = null;
 
-        // Cargar menú
-        fetch('/api/menu').then(r => r.json()).then(menu => {
-            let htmlBotones = '<div class="categorias-container">';
-            let htmlProductos = '';
-            let primera = true;
-            for (let categoria in menu) {
-                let idCat = categoria.replace(/\s+/g, '-');
-                htmlBotones += `<button class="btn-categoria ${primera ? 'activa' : ''}" onclick="mostrarCategoria('${idCat}')" id="btn-${idCat}">${categoria}</button>`;
-                htmlProductos += `<div id="cat-${idCat}" class="categoria-seccion" style="display:${primera ? 'block' : 'none'};">`;
-                menu[categoria].forEach(prod => {
-                    let idInput = prod.nombre.replace(/\s+/g, '');
-                    htmlProductos += `
-                    <div class="producto-card">
-                        <div class="producto-header">
-                            <span class="producto-nombre">${prod.nombre}</span>
-                            <span class="producto-precio">$${prod.precio}</span>
-                        </div>
-                        <div class="producto-desc">${prod.descripcion || ''}</div>
-                        <div class="controles-agregar">
-                            <input type="text" id="nota-${idInput}" class="input-comentario" placeholder="Ej. Sin cebolla, extra mayo...">
-                            <button class="btn-agregar" onclick="agregarAlCarrito('${prod.nombre}', ${prod.precio}, '${idInput}')">Añadir al Carrito</button>
-                        </div>
-                    </div>`;
-                });
-                htmlProductos += `</div>`;
-                primera = false;
-            }
-            htmlBotones += '</div>';
-            document.getElementById('contenedor-menu').innerHTML = htmlBotones + htmlProductos;
-        });
+        // Cargar menú con manejo de errores
+        fetch('/api/menu')
+            .then(r => {
+                if (!r.ok) throw new Error(`Error ${r.status}: ${r.statusText}`);
+                return r.json();
+            })
+            .then(menu => {
+                let htmlBotones = '<div class="categorias-container">';
+                let htmlProductos = '';
+                let primera = true;
+                for (let categoria in menu) {
+                    let idCat = categoria.replace(/\s+/g, '-');
+                    htmlBotones += `<button class="btn-categoria ${primera ? 'activa' : ''}" onclick="mostrarCategoria('${idCat}')" id="btn-${idCat}">${categoria}</button>`;
+                    htmlProductos += `<div id="cat-${idCat}" class="categoria-seccion" style="display:${primera ? 'block' : 'none'};">`;
+                    menu[categoria].forEach(prod => {
+                        let idInput = prod.nombre.replace(/\s+/g, '');
+                        htmlProductos += `
+                        <div class="producto-card">
+                            <div class="producto-header">
+                                <span class="producto-nombre">${prod.nombre}</span>
+                                <span class="producto-precio">$${prod.precio}</span>
+                            </div>
+                            <div class="producto-desc">${prod.descripcion || ''}</div>
+                            <div class="controles-agregar">
+                                <input type="text" id="nota-${idInput}" class="input-comentario" placeholder="Ej. Sin cebolla, extra mayo...">
+                                <button class="btn-agregar" onclick="agregarAlCarrito('${prod.nombre}', ${prod.precio}, '${idInput}')">Añadir al Carrito</button>
+                            </div>
+                        </div>`;
+                    });
+                    htmlProductos += `</div>`;
+                    primera = false;
+                }
+                htmlBotones += '</div>';
+                document.getElementById('contenedor-menu').innerHTML = htmlBotones + htmlProductos;
+            })
+            .catch(err => {
+                document.getElementById('contenedor-menu').innerHTML = `<div class="error-carga">⚠️ Error al cargar el menú: ${err.message}.<br>Verifica que el servidor esté funcionando.</div>`;
+                console.error('Error cargando menú:', err);
+            });
 
         function mostrarCategoria(idCat) {
             document.querySelectorAll('.categoria-seccion').forEach(d => d.style.display = 'none');
@@ -119,9 +129,15 @@
             document.getElementById(`btn-${idCat}`).classList.add('activa');
         }
 
-        fetch('/api/config/tarjeta').then(r => r.json()).then(data => {
-            document.getElementById('numero-tarjeta').innerText = data.numero || '1234 5678 9012 3456';
-        });
+        // Cargar tarjeta configurada
+        fetch('/api/config/tarjeta')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('numero-tarjeta').innerText = data.numero || '1234 5678 9012 3456';
+            })
+            .catch(() => {
+                document.getElementById('numero-tarjeta').innerText = '1234 5678 9012 3456 (default)';
+            });
 
         function agregarAlCarrito(nombre, precio, idInput) {
             let comentario = document.getElementById(`nota-${idInput}`).value;
@@ -172,7 +188,6 @@
             }
         }
 
-        // COMPRESIÓN DE IMAGEN para evitar límites de Firebase
         function procesarFoto(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -181,7 +196,6 @@
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    // Reducir tamaño máximo a 800px de ancho
                     let w = img.width, h = img.height;
                     const maxW = 800, maxH = 800;
                     if (w > maxW || h > maxH) {
@@ -194,7 +208,6 @@
                     canvas.height = h;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, w, h);
-                    // Calidad 0.7 para reducir tamaño
                     fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
                     const el = document.getElementById('estado-foto');
                     el.innerText = '✅ Imagen comprimida y lista';
@@ -223,7 +236,7 @@
                 estado: "Pendiente",
                 metodoPagoInicial: metodo,
                 comprobanteAdjunto: fotoBase64,
-                origen: 'cliente'  // <-- NUEVO: para identificar que viene de clientes
+                origen: 'cliente'
             };
 
             let btn = document.querySelector('.btn-confirmar');
@@ -235,7 +248,10 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(pedido)
-            }).then(r => r.json()).then(res => {
+            }).then(r => {
+                if (!r.ok) throw new Error(`Error ${r.status}: ${r.statusText}`);
+                return r.json();
+            }).then(res => {
                 if (res.success) {
                     alert("✅ ¡Tu pedido ha sido enviado a la cocina de La Queen!");
                     carrito = [];
@@ -249,8 +265,8 @@
                     btn.innerText = txtOriginal;
                     btn.disabled = false;
                 }
-            }).catch(() => {
-                alert("Hubo un error al enviar tu pedido. Intenta nuevamente.");
+            }).catch(err => {
+                alert("Hubo un error al enviar tu pedido: " + err.message);
                 btn.innerText = txtOriginal;
                 btn.disabled = false;
             });
