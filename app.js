@@ -20,6 +20,11 @@ if (!admin.apps.length) {
 
 const db = admin.database();
 const inventarioRef = db.ref('inventario');
+const cuentasRef = db.ref('cuentas'); // Referencia añadida para las cuentas
+
+// ==========================================
+// RUTAS DE INVENTARIO
+// ==========================================
 
 // GET: Obtener todo el inventario
 app.get('/api/inventario', async (req, res) => {
@@ -97,7 +102,6 @@ app.post('/api/inventario/bloquear', async (req, res) => {
     
     const snapshot = await productoRef.once('value');
     if (snapshot.exists()) {
-      // Actualiza solo los parámetros de bloqueo sin tocar la cantidad de stock
       await productoRef.update({
         bloqueado: bloqueado !== undefined ? bloqueado : false,
         horaBloqueo: horaBloqueo || null
@@ -109,6 +113,34 @@ app.post('/api/inventario/bloquear', async (req, res) => {
   } catch (error) {
     console.error('Error al actualizar estado de bloqueo:', error);
     res.status(500).send('Error interno del servidor al bloquear producto');
+  }
+});
+
+// ==========================================
+// RUTAS DE CUENTAS
+// ==========================================
+
+// GET: Obtener todas las cuentas activas
+app.get('/api/cuentas', async (req, res) => {
+  try {
+    const snapshot = await cuentasRef.once('value');
+    const data = snapshot.val();
+    res.status(200).json(data ? Object.values(data) : []);
+  } catch (error) {
+    console.error("Error al obtener cuentas:", error);
+    res.status(500).send('Error al obtener cuentas');
+  }
+});
+
+// DELETE: Eliminar una cuenta cuando se marca como pagada
+app.delete('/api/cuentas/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await cuentasRef.child(id).remove();
+    res.status(200).send('Cuenta eliminada correctamente');
+  } catch (error) {
+    console.error("Error al eliminar cuenta:", error);
+    res.status(500).send('Error interno al borrar la cuenta');
   }
 });
 
