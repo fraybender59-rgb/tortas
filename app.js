@@ -214,6 +214,38 @@ app.post('/api/inventario', async (req, res) => {
   }
 });
 
+app.post('/api/inventario/modificar', async (req, res) => {
+  try {
+    const { nombre, cantidad, operacion } = req.body;
+    const snapshot = await db.collection('inventario_la_queen')
+      .where('nombre', '==', nombre)
+      .limit(1)
+      .get();
+    
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      const actual = doc.data().cantidad || 0;
+      let nueva = actual;
+      
+      if (operacion === 'sumar') nueva += cantidad;
+      if (operacion === 'restar') nueva = Math.max(0, actual - cantidad);
+      
+      await doc.ref.update({ cantidad: nueva });
+      res.json({ success: true, nuevaCantidad: nueva });
+    } else {
+      if (operacion === 'sumar') {
+         await db.collection('inventario_la_queen').add({ nombre, cantidad });
+         res.json({ success: true });
+      } else {
+         res.status(404).json({ error: 'Producto no encontrado' });
+      }
+    }
+  } catch (e) {
+    console.error("Error al modificar inventario:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/comprobantes/:pedidoId', async (req, res) => {
   try {
     const { pedidoId } = req.params;
@@ -243,5 +275,4 @@ if (require.main === module) {
 }
 
 module.exports = app;
-
 

@@ -57,7 +57,13 @@
       try {
         const res = await fetch('/api/inventario');
         if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-        inventarioGlobal = await res.json();
+        
+        const data = await res.json();
+        inventarioGlobal = {};
+        data.forEach(item => {
+            inventarioGlobal[item.nombre] = item.cantidad || 0;
+        });
+
         renderInventario();
         errorMostrado = false;
         if (!intervaloId) {
@@ -121,7 +127,9 @@
       const cards = container.getElementsByClassName('inv-card');
       for (let card of cards) {
         const name = card.querySelector('.item-name').innerText.toLowerCase();
-        card.style.display = name.includes(filtro) ? 'flex' : 'none';
+ 
+
+       card.style.display = name.includes(filtro) ? 'flex' : 'none';
       }
     }
 
@@ -160,8 +168,6 @@
 
     cargarInventario();
   </script>
-<
-
-/body>
+</body>
 </html>
 

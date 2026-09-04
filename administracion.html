@@ -372,7 +372,7 @@
 
         function ejecutar(datos) {
             fetch('/api/pedidos/' + idSeleccionado, {
-                method: 'PATCH',
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(datos)
             }).then(() => {
@@ -540,4 +540,3 @@
     </script>
 </body>
 </html>
-
