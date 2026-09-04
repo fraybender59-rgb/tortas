@@ -5,87 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Almacén / Inventario - La Queen 👑</title>
   <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
     body { padding: 20px; background: #f4f4f9; color: #333; }
     h1 { margin-bottom: 20px; text-align: center; color: #b71c1c; }
-    .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .search-bar { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; }
-    .inventory-grid { display: flex; flex-direction: column; gap: 10px; }
-    .inv-card { display: flex; justify-content: space-between; align-items: center; background: #fafafa; border: 1px solid #e0e0e0; padding: 10px 20px; border-radius: 8px; transition: 0.3s; }
-    .inv-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #b71c1c; }
-    .item-name { font-size: 1.2em; font-weight: bold; color: #333; flex: 1; text-align: left; }
-    .item-stock { font-size: 1.5em; font-weight: bold; color: #2e7d32; width: 120px; text-align: right; margin-right: 20px; }
+    
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #333; color: white; padding: 12px; text-align: left; }
+    td { padding: 12px; border-bottom: 1px solid #ddd; }
+    tr:hover { background-color: #f1f1f1; }
+    
+    .item-stock { font-size: 1.2em; font-weight: bold; color: #2e7d32; text-align: center; }
     .item-stock.bajo { color: #d32f2f; }
-    .controls { display: flex; align-items: center; gap: 5px; }
-    .input-cant { width: 60px; padding: 8px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
-    .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
+    .controls { display: flex; gap: 5px; justify-content: center; }
+    .input-cant { width: 60px; padding: 6px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
+    .btn { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; }
     .btn-add { background: #1976d2; }
-    .btn-add:hover { background: #1565c0; }
     .btn-sub { background: #ff9800; }
-    .btn-sub:hover { background: #e65100; }
-    .nav-btn { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #333; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
-    .nav-btn:hover { background: #555; }
-    .btn-refresh { display: inline-block; margin-left: 15px; padding: 10px 20px; background: #0d9488; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-    .btn-refresh:hover { background: #0a7a6e; }
-    .header-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 20px; }
-    .error-msg { color: #f44336; text-align: center; grid-column: 1 / -1; padding: 20px; background: #ffebee; border-radius: 8px; }
+    .nav-btn { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #333; color: white; text-decoration: none; border-radius: 5px; }
   </style>
 </head>
 <body>
-
   <div class="container">
     <a href="administracion.html" class="nav-btn">⬅ Volver a Administración</a>
-    <div class="header-actions">
-      <h1>📦 Control de Inventario</h1>
-      <button class="btn-refresh" onclick="cargarInventario()">🔄 Actualizar</button>
-    </div>
+    <h1>📦 Control de Inventario (Lista)</h1>
+    <input type="text" id="buscador" class="search-bar" placeholder="Buscar producto..." onkeyup="filtrarInventario()">
     
-    <input type="text" id="buscador" class="search-bar" placeholder="Buscar producto o torta (ej. Cubana, Coca Cola...)" onkeyup="filtrarInventario()">
-
-    <div id="inventoryContainer" class="inventory-grid">
-      <!-- Los productos se cargarán aquí -->
-    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th style="text-align:center;">Existencias</th>
+          <th style="text-align:center;">Ajustar Manual</th>
+        </tr>
+      </thead>
+      <tbody id="inventoryContainer">
+        <!-- Generado por JS -->
+      </tbody>
+    </table>
   </div>
 
   <script>
     let inventarioGlobal = {};
-    let primeraCarga = true;
-    let intervaloId = null;
-    let errorMostrado = false;
 
     async function cargarInventario() {
       try {
         const res = await fetch('/api/inventario');
-        if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-        
         const data = await res.json();
         inventarioGlobal = {};
-        data.forEach(item => {
-            inventarioGlobal[item.nombre] = item.cantidad || 0;
-        });
-
+        data.forEach(item => { inventarioGlobal[item.nombre] = item.cantidad || 0; });
         renderInventario();
-        errorMostrado = false;
-        if (!intervaloId) {
-          intervaloId = setInterval(cargarInventario, 30000);
-        }
-      } catch (e) {
-        console.error("Error al cargar inventario", e);
-        const container = document.getElementById('inventoryContainer');
-        if (primeraCarga) {
-          container.innerHTML = `<div class="error-msg">⚠️ Error al cargar el inventario: ${e.message}.<br>Verifica tu conexión o la cuota de Firestore. Puedes intentar recargar manualmente con el botón "Actualizar".</div>`;
-        } else if (!errorMostrado) {
-          const msg = document.createElement('div');
-          msg.className = 'error-msg';
-          msg.innerText = `⚠️ Error al actualizar: ${e.message}. Intenta recargar manualmente.`;
-          container.prepend(msg);
-          errorMostrado = true;
-        }
-        if (intervaloId) {
-          clearInterval(intervaloId);
-          intervaloId = null;
-        }
-      }
+      } catch (e) { console.error("Error al cargar inventario", e); }
     }
 
     function renderInventario() {
@@ -93,81 +64,42 @@
       const filtro = document.getElementById('buscador').value.toLowerCase();
       const items = Object.keys(inventarioGlobal).sort();
 
-      if (primeraCarga) {
-        container.innerHTML = '';
-        items.forEach(nombre => {
-          const div = document.createElement('div');
-          div.className = 'inv-card';
-          const idNombre = nombre.replace(/[^a-zA-Z0-9]/g, '_'); 
-          div.innerHTML = `
-            <div class="item-name">${nombre}</div>
-            <div id="stock_${idNombre}" class="item-stock ${inventarioGlobal[nombre] <= 5 ? 'bajo' : ''}">${inventarioGlobal[nombre]} pts</div>
+      container.innerHTML = '';
+      items.forEach(nombre => {
+        if (!nombre.toLowerCase().includes(filtro)) return;
+        
+        const idNombre = nombre.replace(/[^a-zA-Z0-9]/g, '_');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight:bold; font-size:1.1em;">${nombre}</td>
+          <td class="item-stock ${inventarioGlobal[nombre] <= 5 ? 'bajo' : ''}">${inventarioGlobal[nombre]}</td>
+          <td>
             <div class="controls">
               <input type="number" id="input_${idNombre}" class="input-cant" value="1" min="1">
               <button class="btn btn-add" onclick="modificarStock('${nombre}', '${idNombre}', 'sumar')">➕</button>
               <button class="btn btn-sub" onclick="modificarStock('${nombre}', '${idNombre}', 'restar')">➖</button>
             </div>
-          `;
-          container.appendChild(div);
-        });
-        primeraCarga = false;
-      } else {
-        items.forEach(nombre => {
-          const idNombre = nombre.replace(/[^a-zA-Z0-9]/g, '_'); 
-          const stockEl = document.getElementById('stock_' + idNombre);
-          if (stockEl) {
-            stockEl.innerText = inventarioGlobal[nombre] + ' pts';
-            stockEl.className = 'item-stock ' + (inventarioGlobal[nombre] <= 5 ? 'bajo' : '');
-          }
-        });
-        const errors = container.querySelectorAll('.error-msg');
-        errors.forEach(el => el.remove());
-      }
-
-      const cards = container.getElementsByClassName('inv-card');
-      for (let card of cards) {
-        const name = card.querySelector('.item-name').innerText.toLowerCase();
- 
-
-       card.style.display = name.includes(filtro) ? 'flex' : 'none';
-      }
+          </td>
+        `;
+        container.appendChild(tr);
+      });
     }
 
     async function modificarStock(nombreReal, idNombre, operacion) {
       const input = document.getElementById(`input_${idNombre}`);
       const cantidad = parseInt(input.value);
+      if (isNaN(cantidad) || cantidad <= 0) return alert("Ingresa cantidad válida");
 
-      if (isNaN(cantidad) || cantidad <= 0) {
-        alert("Por favor ingresa una cantidad válida.");
-        return;
-      }
-
-      try {
-        const res = await fetch('/api/inventario/modificar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre: nombreReal, cantidad, operacion })
-        });
-
-        if (res.ok) {
-          input.value = 1; 
-          cargarInventario();
-        } else {
-          const errorText = await res.text();
-          alert("Error al actualizar el inventario: " + errorText);
-        }
-      } catch (e) {
-        console.error("Error", e);
-        alert("Error de red al modificar el inventario.");
-      }
-    }
-
-    function filtrarInventario() {
-      renderInventario();
+      await fetch('/api/inventario/modificar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: nombreReal, cantidad, operacion })
+      });
+      cargarInventario();
     }
 
     cargarInventario();
+    setInterval(cargarInventario, 30000); // Refresco automático cada 30 seg
   </script>
 </body>
 </html>
-
