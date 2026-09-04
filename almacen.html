@@ -10,13 +10,13 @@
     h1 { margin-bottom: 20px; text-align: center; color: #b71c1c; }
     .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .search-bar { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; }
-    .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
-    .inv-card { background: #fafafa; border: 1px solid #e0e0e0; padding: 15px; border-radius: 8px; text-align: center; transition: 0.3s; }
+    .inventory-grid { display: flex; flex-direction: column; gap: 10px; }
+    .inv-card { display: flex; justify-content: space-between; align-items: center; background: #fafafa; border: 1px solid #e0e0e0; padding: 10px 20px; border-radius: 8px; transition: 0.3s; }
     .inv-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #b71c1c; }
-    .item-name { font-size: 1.1em; font-weight: bold; margin-bottom: 10px; color: #333; }
-    .item-stock { font-size: 1.8em; font-weight: bold; color: #2e7d32; margin-bottom: 15px; }
+    .item-name { font-size: 1.2em; font-weight: bold; color: #333; flex: 1; text-align: left; }
+    .item-stock { font-size: 1.5em; font-weight: bold; color: #2e7d32; width: 120px; text-align: right; margin-right: 20px; }
     .item-stock.bajo { color: #d32f2f; }
-    .controls { display: flex; justify-content: center; align-items: center; gap: 5px; }
+    .controls { display: flex; align-items: center; gap: 5px; }
     .input-cant { width: 60px; padding: 8px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
     .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
     .btn-add { background: #1976d2; }
@@ -60,7 +60,6 @@
         inventarioGlobal = await res.json();
         renderInventario();
         errorMostrado = false;
-        // Si había error, reiniciar el intervalo
         if (!intervaloId) {
           intervaloId = setInterval(cargarInventario, 30000);
         }
@@ -70,14 +69,12 @@
         if (primeraCarga) {
           container.innerHTML = `<div class="error-msg">⚠️ Error al cargar el inventario: ${e.message}.<br>Verifica tu conexión o la cuota de Firestore. Puedes intentar recargar manualmente con el botón "Actualizar".</div>`;
         } else if (!errorMostrado) {
-          // Mostrar mensaje en la parte superior
           const msg = document.createElement('div');
           msg.className = 'error-msg';
           msg.innerText = `⚠️ Error al actualizar: ${e.message}. Intenta recargar manualmente.`;
           container.prepend(msg);
           errorMostrado = true;
         }
-        // Detener el intervalo para no saturar
         if (intervaloId) {
           clearInterval(intervaloId);
           intervaloId = null;
@@ -109,7 +106,6 @@
         });
         primeraCarga = false;
       } else {
-        // Actualizar solo los valores numéricos
         items.forEach(nombre => {
           const idNombre = nombre.replace(/[^a-zA-Z0-9]/g, '_'); 
           const stockEl = document.getElementById('stock_' + idNombre);
@@ -118,16 +114,14 @@
             stockEl.className = 'item-stock ' + (inventarioGlobal[nombre] <= 5 ? 'bajo' : '');
           }
         });
-        // Remover mensajes de error previos
         const errors = container.querySelectorAll('.error-msg');
         errors.forEach(el => el.remove());
       }
 
-      // Aplicar filtro de búsqueda
       const cards = container.getElementsByClassName('inv-card');
       for (let card of cards) {
         const name = card.querySelector('.item-name').innerText.toLowerCase();
-        card.style.display = name.includes(filtro) ? 'block' : 'none';
+        card.style.display = name.includes(filtro) ? 'flex' : 'none';
       }
     }
 
@@ -149,7 +143,7 @@
 
         if (res.ok) {
           input.value = 1; 
-          cargarInventario(); // Recargar para reflejar cambios
+          cargarInventario();
         } else {
           const errorText = await res.text();
           alert("Error al actualizar el inventario: " + errorText);
@@ -164,10 +158,10 @@
       renderInventario();
     }
 
-    // Carga inicial
     cargarInventario();
-    
-    // No inicializamos intervalo automáticamente; se inicia en la primera carga exitosa
   </script>
-</body>
+<
+
+/body>
 </html>
+

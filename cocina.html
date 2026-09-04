@@ -56,7 +56,7 @@
 
     function renderizarPedidos() {
       const container = document.getElementById('pedidosContainer');
-      const activos = pedidos.filter(p => p.estado !== 'Cobrado' && p.estado !== 'Cancelado');
+      const activos = pedidos.filter(p => p.estado !== 'Cobrado' && p.estado !== 'Cancelado' && p.estado !== 'Cerrado');
 
       if (activos.length === 0) {
         container.innerHTML = '<div class="sin-pedidos">✅ No hay pedidos activos en cocina.</div>';
@@ -69,7 +69,6 @@
         const estado = obtenerEstado(minutos);
         const badge = `<span class="badge ${estado.badge}">${estado.texto} ${minutos} min</span>`;
 
-        // Mejor detección de origen: si contiene 'cliente' -> Cliente, sino Staff
         const esCliente = p.origen && p.origen.toLowerCase().includes('cliente');
         const origenTexto = esCliente ? '👤 Cliente' : '👨‍🍳 Staff';
 
@@ -96,6 +95,7 @@
             <div style="font-size:0.85em; color:#666;">Origen: ${origenTexto}</div>
             <div class="items">${itemsHtml}</div>
             <div class="total">Total: $${parseFloat(p.total || 0).toFixed(2)}</div>
+            <button onclick="cerrarPedido('${p.id}')" style="width:100%; margin-top:15px; padding:12px; background:#4caf50; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer; font-size:1rem;">✅ Cerrar Pedido</button>
           </div>
         `;
       });
@@ -115,9 +115,28 @@
       }
     }
 
-    // Auto-actualizar cada 15 segundos
+    async function cerrarPedido(id) {
+      if (confirm("¿Seguro que quiere cerrar pedido?")) {
+        try {
+          const res = await fetch(`/api/pedidos/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estado: 'Cerrado' })
+          });
+          if (res.ok) {
+            cargarPedidos();
+          } else {
+            alert("Error al cerrar el pedido.");
+          }
+        } catch (e) {
+          alert("Error de red al cerrar pedido.");
+        }
+      }
+    }
+
     setInterval(cargarPedidos, 15000);
     cargarPedidos();
   </script>
 </body>
 </html>
+

@@ -4,12 +4,10 @@ const admin = require('firebase-admin');
 
 const app = express();
 
-// Middlewares
 app.use(cors());
-app.use(express.json({ limit: '15mb' })); // Soporte para imágenes base64 de comprobantes
+app.use(express.json({ limit: '15mb' })); 
 app.use(express.static(__dirname));
 
-// Inicialización de Firebase Admin SDK
 if (!admin.apps.length) {
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -30,7 +28,6 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// ===================== DESCUENTO DE INVENTARIO SEGURO =====================
 async function descontarInventario(items) {
   if (!items || !Array.isArray(items)) return;
 
@@ -53,10 +50,9 @@ async function descontarInventario(items) {
   }
 }
 
-// ===================== LIMPIEZA AUTOMÁTICA DE COMPROBANTES =====================
 async function limpiarComprobantesAntiguos() {
   try {
-    const limiteDias = 3;
+    const limiteDias = 30; // Modificado para almacenar comprobantes por 30 días
     const fechaLimite = new Date();
     fechaLimite.setDate(fechaLimite.getDate() - limiteDias);
     const isoLimite = fechaLimite.toISOString().split('T')[0];
@@ -75,9 +71,6 @@ async function limpiarComprobantesAntiguos() {
   }
 }
 
-// ===================== RUTAS DE PEDIDOS =====================
-
-// Obtener pedidos (OPTIMIZADO: Máximo 100 pedidos para proteger cuota diaria)
 app.get('/api/pedidos', async (req, res) => {
   try {
     const snapshot = await db.collection('pedidos')
@@ -87,7 +80,6 @@ app.get('/api/pedidos', async (req, res) => {
     const pedidos = [];
     snapshot.forEach(doc => pedidos.push({ id: doc.id, ...doc.data() }));
 
-    // Ordenar en memoria por fecha descendente
     pedidos.sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
 
     res.json(pedidos);
@@ -97,7 +89,6 @@ app.get('/api/pedidos', async (req, res) => {
   }
 });
 
-// Crear nuevo pedido
 app.post('/api/pedidos', async (req, res) => {
   try {
     const { comprobanteAdjunto, ...datosPedido } = req.body;
@@ -110,17 +101,14 @@ app.post('/api/pedidos', async (req, res) => {
       tieneFoto: Boolean(comprobanteAdjunto)
     };
 
-    // 1. Guardar el pedido principal
     const docRef = await db.collection('pedidos').add(nuevoPedido);
 
-    // 2. Descontar inventario de forma asíncrona no bloqueante
     if (nuevoPedido.items && nuevoPedido.items.length > 0) {
       descontarInventario(nuevoPedido.items).catch(err =>
         console.error("Error en proceso de inventario:", err.message)
       );
     }
 
-    // 3. Guardar comprobante de pago si fue adjuntado
     if (comprobanteAdjunto) {
       await db.collection('comprobantes').add({
         pedidoId: docRef.id,
@@ -130,7 +118,6 @@ app.post('/api/pedidos', async (req, res) => {
       }).catch(err => console.error("Error al guardar comprobante:", err.message));
     }
 
-    // Ejecutar limpieza periódica
     limpiarComprobantesAntiguos().catch(err => console.error(err));
 
     res.json({ success: true, id: docRef.id });
@@ -140,7 +127,6 @@ app.post('/api/pedidos', async (req, res) => {
   }
 });
 
-// Actualizar estado de un pedido (Cobrado, Cancelado, etc.)
 app.put('/api/pedidos/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -154,7 +140,6 @@ app.put('/api/pedidos/:id', async (req, res) => {
   }
 });
 
-// Eliminar un pedido
 app.delete('/api/pedidos/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -166,9 +151,6 @@ app.delete('/api/pedidos/:id', async (req, res) => {
   }
 });
 
-// ===================== RUTAS DE INVENTARIO =====================
-
-// Obtener todo el inventario
 app.get('/api/inventario', async (req, res) => {
   try {
     const snapshot = await db.collection('inventario_la_queen').get();
@@ -181,7 +163,6 @@ app.get('/api/inventario', async (req, res) => {
   }
 });
 
-// Crear o actualizar producto en el inventario
 app.post('/api/inventario', async (req, res) => {
   try {
     const item = req.body;
@@ -200,9 +181,6 @@ app.post('/api/inventario', async (req, res) => {
   }
 });
 
-// ===================== RUTAS DE COMPROBANTES =====================
-
-// Obtener comprobante por ID del pedido
 app.get('/api/comprobantes/:pedidoId', async (req, res) => {
   try {
     const { pedidoId } = req.params;
@@ -223,7 +201,6 @@ app.get('/api/comprobantes/:pedidoId', async (req, res) => {
   }
 });
 
-// Arrancar servidor local o exportar para despliegue
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
   app.listen(PORT, () => {
@@ -232,4 +209,3 @@ if (require.main === module) {
 }
 
 module.exports = app;
-
