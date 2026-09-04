@@ -183,7 +183,7 @@
         }
 
         function obtenerDatosServidor() {
-            fetch('/api/pedidos').then(r => r.json()).then(pedidos => {
+            fetch('/api/cuentas').then(r => r.json()).then(pedidos => {
                 pedidosLocales = pedidos;
                 renderBandejas();
             }).catch(e => console.error('Error fetching:', e));
@@ -325,7 +325,7 @@
             }
             document.getElementById('modal-modificar').style.display = 'none';
 
-            fetch('/api/pedidos/' + idSeleccionado, {
+            fetch('/api/cuentas/' + idSeleccionado, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(datos)
@@ -352,10 +352,19 @@
         };
 
         function ejecutar(datos) {
-            let index = pedidosLocales.findIndex(p => String(p.id) === String(idSeleccionado));
-            if (index !== -1) { pedidosLocales[index] = { ...pedidosLocales[index], ...datos }; renderBandejas(); }
             document.getElementById('modal-accion').style.display = 'none';
-            fetch('/api/pedidos/' + idSeleccionado, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+
+            let index = pedidosLocales.findIndex(p => String(p.id) === String(idSeleccionado));
+            if (index !== -1) { 
+                pedidosLocales.splice(index, 1); 
+                renderBandejas(); 
+            }
+
+            fetch('/api/cuentas/' + idSeleccionado, { 
+                method: 'DELETE' 
+            }).then(res => {
+                if(!res.ok) console.error("Fallo al borrar en Firebase");
+            }).catch(err => console.error("Error de red:", err));
         }
 
         function verFotoPedido(id) {
