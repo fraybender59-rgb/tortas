@@ -11,15 +11,11 @@ app.use(express.static(__dirname));
 if (!admin.apps.length) {
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    });
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
   } else {
     try {
       const serviceAccount = require('./serviceAccountKey.json');
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-      });
+      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
     } catch (e) {
       admin.initializeApp();
     }
@@ -28,16 +24,34 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+// --- INICIO DE SISTEMA DE CACHÉ EN MEMORIA ---
+let pedidosCache = [];
+let cacheInicializado = false;
+
+async function inicializarCache() {
+  if (cacheInicializado) return;
+  try {
+    const snapshot = await db.collection('pedidos').get();
+    pedidosCache = [];
+    snapshot.forEach(doc => pedidosCache.push({ id: doc.id, ...doc.data() }));
+    // Ordenar del más reciente al más antiguo
+    pedidosCache.sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
+    cacheInicializado = true;
+    console.log("✅ Caché de pedidos inicializado en memoria RAM. Lecturas a Firebase minimizadas.");
+  } catch (e) {
+    console.error("Error al inicializar caché:", e.message);
+  }
+}
+// --- FIN DE SISTEMA DE CACHÉ ---
+
 async function descontarInventario(items) {
   if (!items || !Array.isArray(items)) return;
-
   for (const item of items) {
     try {
       const snapshot = await db.collection('inventario_la_queen')
         .where('nombre', '==', item.nombre)
         .limit(1)
         .get();
-
       if (!snapshot.empty) {
         const doc = snapshot.docs[0];
         const actual = doc.data().cantidad || 0;
@@ -52,7 +66,7 @@ async function descontarInventario(items) {
 
 async function limpiarComprobantesAntiguos() {
   try {
-    const limiteDias = 30; // Modificado para almacenar comprobantes por 30 días
+    const limiteDias = 30;
     const fechaLimite = new Date();
     fechaLimite.setDate(fechaLimite.getDate() - limiteDias);
     const isoLimite = fechaLimite.toISOString().split('T')[0];
@@ -73,16 +87,10 @@ async function limpiarComprobantesAntiguos() {
 
 app.get('/api/pedidos', async (req, res) => {
   try {
-    const snapshot = await db.collection('pedidos')
-      .limit(100)
-      .get();
-
-    const pedidos = [];
-    snapshot.forEach(doc => pedidos.push({ id: doc.id, ...doc.data() }));
-
-    pedidos.sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
-
-    res.json(pedidos);
+    if (!cacheInicializado) {
+      await inicializarCache(); // Lee de Firebase solo la primera vez o si se reinicia el servidor
+    }
+    res.json(pedidosCache); // Devuelve instantáneamente los datos desde la memoria RAM local
   } catch (e) {
     console.error("Error al obtener pedidos:", e.message);
     res.status(500).json({ error: e.message });
@@ -101,7 +109,14 @@ app.post('/api/pedidos', async (req, res) => {
       tieneFoto: Boolean(comprobanteAdjunto)
     };
 
+    // Escritura única en Firebase
     const docRef = await db.collection('pedidos').add(nuevoPedido);
+    const pedidoCompleto = { id: docRef.id, ...nuevoPedido };
+
+    // Inserción en memoria RAM al inicio del arreglo
+    if (cacheInicializado) {
+      pedidosCache.unshift(pedidoCompleto);
+    }
 
     if (nuevoPedido.items && nuevoPedido.items.length > 0) {
       descontarInventario(nuevoPedido.items).catch(err =>
@@ -132,7 +147,17 @@ app.put('/api/pedidos/:id', async (req, res) => {
     const { id } = req.params;
     const actualizacion = req.body;
 
+    // Actualiza en Firebase
     await db.collection('pedidos').doc(id).update(actualizacion);
+
+    // Actualiza el estado en la memoria RAM instantáneamente 
+    if (cacheInicializado) {
+      const index = pedidosCache.findIndex(p => p.id === id);
+      if (index !== -1) {
+        pedidosCache[index] = { ...pedidosCache[index], ...actualizacion };
+      }
+    }
+
     res.json({ success: true, id });
   } catch (e) {
     console.error(`Error al actualizar pedido ${req.params.id}:`, e.message);
@@ -143,7 +168,15 @@ app.put('/api/pedidos/:id', async (req, res) => {
 app.delete('/api/pedidos/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Elimina de Firebase
     await db.collection('pedidos').doc(id).delete();
+
+    // Elimina el pedido del arreglo en la memoria RAM
+    if (cacheInicializado) {
+      pedidosCache = pedidosCache.filter(p => p.id !== id);
+    }
+
     res.json({ success: true, id });
   } catch (e) {
     console.error(`Error al eliminar pedido ${req.params.id}:`, e.message);
@@ -203,9 +236,12 @@ app.get('/api/comprobantes/:pedidoId', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`Servidor activo en http://localhost:${PORT}`);
+    await inicializarCache(); // Carga la memoria al arrancar la consola
   });
 }
 
 module.exports = app;
+
+
