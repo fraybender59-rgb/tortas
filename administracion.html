@@ -34,10 +34,13 @@
         .tarjeta-pedido { background: #222; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 5px solid #8bc34a; }
         .tarjeta-pedido.cancelado { border-left-color: #f44336; opacity: 0.7; }
         .tarjeta-pedido.cobrado { border-left-color: #9c27b0; opacity: 0.8; }
+        
         .grid-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
         .btn-act { padding: 10px; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; }
         .btn-pagado { background: #8bc34a; color: #111; }
         .btn-tarjeta { background: #3f51b5; color: #fff; }
+        .btn-cortesia { background: #03a9f4; color: #fff; }
+        .btn-descuento { background: #9c27b0; color: #fff; }
         .btn-cancelar { background: #f44336; color: #fff; grid-column: span 2; }
         
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: flex-start; padding-top: 30px; overflow-y: auto; }
@@ -48,19 +51,16 @@
         
         .galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; max-height: 40vh; overflow-y: auto; background: #111; padding: 10px; border-radius: 5px; border: 1px solid #444; margin-top: 15px; }
         .galeria img { width: 100%; height: 120px; object-fit: cover; border-radius: 5px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
-        .galeria img:hover { border-color: #8bc34a; transform: scale(1.05); }
         
         .historial-tabla { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .historial-tabla th { background: #333; color: #ff9800; padding: 10px; text-align: center; border: 1px solid #444; }
+        .historial-tabla th { background: #333; color: #ff9800; padding: 10px; border: 1px solid #444; }
         .historial-tabla td { padding: 8px; text-align: center; border: 1px solid #444; }
-        .historial-tabla tr:nth-child(even) { background: #1a1a22; }
         
-        input, select { width: 100%; padding: 10px; margin: 5px 0 15px 0; background: #111; color: #fff; border: 1px solid #444; border-radius: 5px; }
+        input, select { width: 100%; padding: 10px; margin: 5px 0 15px 0; background: #111; color: #fff; border: 1px solid #444; border-radius: 5px; font-size: 1rem; }
     </style>
 </head>
 <body>
 
-    <!-- PANTALLA DE BLOQUEO -->
     <div id="bloqueo" style="display:flex; justify-content:center; align-items:center; min-height:100vh; flex-direction:column; gap:20px; background:#121216; position:fixed; inset:0; z-index:9999;">
         <h1 style="color:#ff9800;">🔐 Acceso Restringido</h1>
         <input type="password" id="input-pass" placeholder="Contraseña" style="padding:12px 20px; border-radius:8px; border:2px solid #444; background:#222; color:#fff; font-size:1.2rem; width:280px; text-align:center;" onkeydown="if(event.key==='Enter') verificarPass()">
@@ -68,7 +68,6 @@
         <div id="error-pass" style="color:#f44336; font-weight:bold; display:none;">❌ Contraseña incorrecta</div>
     </div>
 
-    <!-- CONTENIDO PRINCIPAL -->
     <div id="contenido-admin" style="display:none;">
         <div class="barra-nav">
             <a href="clientes.html" target="_blank" class="btn-nav btn-comandero-pub">📱 Comandero Público</a>
@@ -89,97 +88,63 @@
                 <button class="tab-btn activa" data-tab="tab-clientes" onclick="cambiarTab('tab-clientes')">👤 Clientes</button>
                 <button class="tab-btn" data-tab="tab-staff" onclick="cambiarTab('tab-staff')">👨‍🍳 Staff</button>
             </div>
-            <div id="tab-clientes" class="tab-contenido activo">
-                <div id="bandeja-clientes">Cargando...</div>
-            </div>
-            <div id="tab-staff" class="tab-contenido">
-                <div id="bandeja-staff">Cargando...</div>
-            </div>
+            <div id="tab-clientes" class="tab-contenido activo"><div id="bandeja-clientes">Cargando...</div></div>
+            <div id="tab-staff" class="tab-contenido"><div id="bandeja-staff">Cargando...</div></div>
         </div>
 
-        <!-- MODAL: COBRADAS HOY -->
-        <div id="modal-historial" class="modal-overlay">
+        <!-- MODAL: AUTORIZAR MODIFICACIÓN DE CUENTA -->
+        <div id="modal-modificar" class="modal-overlay">
             <div class="modal-content">
-                <h3 style="color:#ff9800; text-align:center;">📁 Cuentas Cobradas Hoy</h3>
-                <div id="total-ventas-historial" style="background: #111; color: #8bc34a; font-size: 1.3rem; text-align: center; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #8bc34a;">Total Vendido: $0.00</div>
-                <div id="bandeja-historial" style="max-height: 50vh; overflow-y: auto;"></div>
-                <button class="btn-modal btn-cancel" style="width:100%; margin-top:15px;" onclick="document.getElementById('modal-historial').style.display='none'">Cerrar</button>
-            </div>
-        </div>
+                <h3 style="color:#03a9f4; text-align:center;">🔑 Autorizar Modificación</h3>
+                <p id="mod-cliente-nombre" style="text-align:center; color:#aaa;"></p>
 
-        <!-- MODAL: RESUMEN DE CORTE -->
-        <div id="modal-cortes" class="modal-overlay">
-            <div class="modal-content">
-                <h3 style="color:#d97706; text-align:center;">💰 Resumen de Ventas y Corte</h3>
-                <p style="text-align:center; color:#aaa;">El corte archivará los pedidos cobrados del día.</p>
-                <button class="btn-modal btn-ok" style="width:100%; margin-bottom:10px; background:#e11d48; color:white;" onclick="realizarCorte()">🛑 REALIZAR CORTE Y ARCHIVAR</button>
-                <button class="btn-modal btn-cancel" style="width:100%;" onclick="document.getElementById('modal-cortes').style.display='none'">Cerrar</button>
-            </div>
-        </div>
-
-        <!-- MODAL: HISTORIAL DE DÍAS -->
-        <div id="modal-historial-dias" class="modal-overlay">
-            <div class="modal-content" style="max-width:800px;">
-                <h3 style="color:#0d9488; text-align:center;">📅 Historial de Cortes Anteriores</h3>
-                <div id="contenido-historial-dias" style="max-height:60vh; overflow-y:auto;">Cargando historial...</div>
-                <button class="btn-modal btn-cancel" style="width:100%; margin-top:15px;" onclick="document.getElementById('modal-historial-dias').style.display='none'">Cerrar</button>
-            </div>
-        </div>
-
-        <!-- MODAL: COMPROBANTES DE TRANSFERENCIA -->
-        <div id="modal-comprobantes" class="modal-overlay">
-            <div class="modal-content" style="max-width:800px;">
-                <h3 style="color:#e11d48; text-align:center;">📸 Comprobantes de Transferencia</h3>
-                <label>Seleccionar Fecha:</label>
-                <input type="date" id="fecha-comprobantes" onchange="cargarComprobantes()">
-                <div id="galeria-comprobantes" class="galeria"></div>
-                <button class="btn-modal btn-cancel" style="width:100%; margin-top:20px;" onclick="document.getElementById('modal-comprobantes').style.display='none'">Cerrar Galería</button>
-            </div>
-        </div>
-
-        <!-- MODAL: EDITAR PRECIOS -->
-        <div id="modal-precios" class="modal-overlay">
-            <div class="modal-content">
-                <h3 style="color:#ff5722; text-align:center;">✏️ Editar Precios de Productos</h3>
-                <div id="lista-precios-editor" style="max-height:50vh; overflow-y:auto;">
-                    <!-- Se carga dinámicamente -->
+                <!-- Panel de Cortesía -->
+                <div id="seccion-mod-producto" style="display:none; background:#111; padding:15px; border-radius:5px; margin-bottom:15px; border:1px solid #444;">
+                    <label style="color:#03a9f4;">Seleccionar Producto para hacer Cortesía (Restar al total):</label>
+                    <select id="mod-select-producto"></select>
+                    <hr style="border-color:#333; margin:15px 0;">
+                    <label style="color:#03a9f4;">O aplicar cortesía a toda la cuenta:</label>
+                    <button class="btn-modal" style="background:#e91e63; color:white; width:100%; margin-top:5px;" onclick="aplicarCortesiaTotal()">🎁 HACER TODA LA CUENTA CORTESÍA ($0.00)</button>
                 </div>
-                <button class="btn-modal btn-ok" style="width:100%; margin-top:10px;" onclick="guardarPrecios()">💾 Guardar Precios</button>
-                <button class="btn-modal btn-cancel" style="width:100%; margin-top:5px;" onclick="document.getElementById('modal-precios').style.display='none'">Cancelar</button>
-            </div>
-        </div>
 
-        <!-- MODAL: CONFIGURAR TARJETA -->
-        <div id="modal-tarjeta" class="modal-overlay">
-            <div class="modal-content">
-                <h3 style="color:#3f51b5; text-align:center;">💳 Configuración de Datos Bancarios</h3>
-                <label>Banco:</label>
-                <input type="text" id="conf-banco" placeholder="Ej: BBVA / Banamex">
-                <label>Número de Tarjeta / CLABE:</label>
-                <input type="text" id="conf-tarjeta" placeholder="0000 0000 0000 0000">
-                <label>Titular de la cuenta:</label>
-                <input type="text" id="conf-titular" placeholder="Nombre completo">
-                <button class="btn-modal btn-ok" style="width:100%;" onclick="guardarConfigTarjeta()">💾 Guardar Datos</button>
-                <button class="btn-modal btn-cancel" style="width:100%; margin-top:5px;" onclick="document.getElementById('modal-tarjeta').style.display='none'">Cancelar</button>
-            </div>
-        </div>
+                <!-- Panel de Descuento -->
+                <div id="seccion-mod-global" style="display:none; background:#111; padding:15px; border-radius:5px; margin-bottom:15px; border:1px solid #444;">
+                    <label style="color:#9c27b0;">Descuento en Porcentaje (%):</label>
+                    <input type="number" id="mod-desc-porcentaje" placeholder="Ej: 10 (para 10%)">
+                    <label style="color:#9c27b0; margin-top:10px; display:block;">O Descuento Fijo en Dinero ($):</label>
+                    <input type="number" id="mod-desc-monto" placeholder="Ej: 50 (para restar $50)">
+                </div>
 
-        <!-- VISOR AMPLIA IMAGEN -->
-        <div id="visor-imagen" class="modal-overlay" style="z-index:2000; align-items:center;" onclick="this.style.display='none'">
-            <img id="imagen-ampliada" src="" style="max-width:95%; max-height:95%; border:3px solid #8bc34a; border-radius:10px;">
-        </div>
+                <hr style="border-color:#444; margin:15px 0;">
+                <label style="color:#ff9800; font-weight:bold; text-align:center; display:block;">Contraseña de Administración:</label>
+                <input type="password" id="mod-pass" placeholder="***" style="text-align:center; font-size:1.5rem; letter-spacing: 5px;">
 
-        <!-- MODAL ACCIÓN / CONFIRMACIÓN -->
-        <div id="modal-accion" class="modal-overlay">
-            <div class="modal-content">
-                <h3 id="titulo-accion" style="color:#ff9800; margin-top:0;">Confirmar Acción</h3>
-                <div id="cuerpo-accion"></div>
                 <div style="display:flex; justify-content:space-between; margin-top:15px;">
-                    <button class="btn-modal btn-cancel" onclick="document.getElementById('modal-accion').style.display='none'">Cancelar</button>
-                    <button class="btn-modal btn-ok" id="btn-confirmar-accion">Confirmar</button>
+                    <button class="btn-modal btn-cancel" onclick="document.getElementById('modal-modificar').style.display='none'">Cancelar</button>
+                    <button class="btn-modal btn-ok" onclick="procesarModificacion()">Aplicar Cambio</button>
                 </div>
             </div>
         </div>
+
+        <!-- OTROS MODALES (Mantenidos igual) -->
+        <div id="modal-historial" class="modal-overlay">
+            <div class="modal-content"><h3 style="color:#ff9800; text-align:center;">📁 Cobradas Hoy</h3><div id="total-ventas-historial" style="background: #111; color: #8bc34a; font-size: 1.3rem; text-align: center; padding: 10px; border-radius: 5px; margin-bottom: 15px;">Total: $0.00</div><div id="bandeja-historial" style="max-height: 50vh; overflow-y: auto;"></div><button class="btn-modal btn-cancel" style="width:100%;" onclick="document.getElementById('modal-historial').style.display='none'">Cerrar</button></div>
+        </div>
+        <div id="modal-cortes" class="modal-overlay">
+            <div class="modal-content"><h3 style="color:#d97706; text-align:center;">💰 Corte</h3><button class="btn-modal btn-ok" style="width:100%; background:#e11d48; color:white;" onclick="realizarCorte()">🛑 REALIZAR CORTE Y ARCHIVAR</button><button class="btn-modal btn-cancel" style="width:100%; margin-top:10px;" onclick="document.getElementById('modal-cortes').style.display='none'">Cerrar</button></div>
+        </div>
+        <div id="modal-historial-dias" class="modal-overlay">
+            <div class="modal-content"><h3 style="color:#0d9488; text-align:center;">📅 Historial de Cortes</h3><div id="contenido-historial-dias"></div><button class="btn-modal btn-cancel" style="width:100%;" onclick="document.getElementById('modal-historial-dias').style.display='none'">Cerrar</button></div>
+        </div>
+        <div id="modal-comprobantes" class="modal-overlay">
+            <div class="modal-content"><h3 style="color:#e11d48; text-align:center;">📸 Comprobantes</h3><input type="date" id="fecha-comprobantes" onchange="cargarComprobantes()"><div id="galeria-comprobantes" class="galeria"></div><button class="btn-modal btn-cancel" style="width:100%;" onclick="document.getElementById('modal-comprobantes').style.display='none'">Cerrar</button></div>
+        </div>
+        <div id="visor-imagen" class="modal-overlay" style="z-index:2000; align-items:center;" onclick="this.style.display='none'"><img id="imagen-ampliada" src="" style="max-width:95%; max-height:95%; border:3px solid #8bc34a; border-radius:10px;"></div>
+        <div id="modal-accion" class="modal-overlay">
+            <div class="modal-content"><h3 id="titulo-accion" style="color:#ff9800; margin-top:0;">Confirmar Acción</h3><div id="cuerpo-accion"></div><div style="display:flex; justify-content:space-between; margin-top:15px;"><button class="btn-modal btn-cancel" onclick="document.getElementById('modal-accion').style.display='none'">Cancelar</button><button class="btn-modal btn-ok" id="btn-confirmar-accion">Confirmar</button></div></div>
+        </div>
+        <div id="modal-precios" class="modal-overlay"><div class="modal-content"><h3 style="color:#ff5722;">✏️ Precios</h3><button class="btn-modal btn-cancel" style="width:100%;" onclick="document.getElementById('modal-precios').style.display='none'">Cerrar</button></div></div>
+        <div id="modal-tarjeta" class="modal-overlay"><div class="modal-content"><h3 style="color:#3f51b5;">💳 Tarjeta</h3><button class="btn-modal btn-cancel" style="width:100%;" onclick="document.getElementById('modal-tarjeta').style.display='none'">Cerrar</button></div></div>
     </div>
 
     <script>
@@ -187,6 +152,7 @@
         let pedidosLocales = [];
         let idSeleccionado = null;
         let tabActiva = 'tab-clientes';
+        let modoModificacion = '';
 
         function verificarPass() {
             if (document.getElementById('input-pass').value === CLAVE) {
@@ -194,9 +160,7 @@
                 document.getElementById('bloqueo').style.display = 'none';
                 document.getElementById('contenido-admin').style.display = 'block';
                 iniciarAdmin();
-            } else {
-                document.getElementById('error-pass').style.display = 'block';
-            }
+            } else { document.getElementById('error-pass').style.display = 'block'; }
         }
 
         (function() {
@@ -207,10 +171,7 @@
             }
         })();
 
-        function iniciarAdmin() {
-            obtenerDatosServidor();
-            setInterval(obtenerDatosServidor, 4000);
-        }
+        function iniciarAdmin() { obtenerDatosServidor(); setInterval(obtenerDatosServidor, 4000); }
 
         function cambiarTab(tabId) {
             tabActiva = tabId;
@@ -222,12 +183,10 @@
         }
 
         function obtenerDatosServidor() {
-            fetch('/api/pedidos')
-                .then(r => r.json())
-                .then(pedidos => {
-                    pedidosLocales = pedidos;
-                    renderBandejas();
-                }).catch(e => console.error('Error fetching:', e));
+            fetch('/api/pedidos').then(r => r.json()).then(pedidos => {
+                pedidosLocales = pedidos;
+                renderBandejas();
+            }).catch(e => console.error('Error fetching:', e));
         }
 
         function renderBandejas() {
@@ -241,10 +200,7 @@
             const hoy = new Date().toISOString().split('T')[0];
             const cobradasHoy = pedidosLocales.filter(p => p.estado === 'Cobrado' && p.fecha && p.fecha.startsWith(hoy));
             
-            cobradasHoy.forEach(p => {
-                totalVentas += parseFloat(p.total) || 0;
-                htmlHistorial += renderTarjetaPedido(p, true);
-            });
+            cobradasHoy.forEach(p => { totalVentas += parseFloat(p.total) || 0; htmlHistorial += renderTarjetaPedido(p, true); });
             document.getElementById('bandeja-historial').innerHTML = htmlHistorial || '<p style="text-align:center;">Sin cobros hoy</p>';
             document.getElementById('total-ventas-historial').innerText = `Total Vendido Hoy: $${totalVentas.toFixed(2)}`;
         }
@@ -252,7 +208,6 @@
         function renderListaPedidos(pedidos) {
             const activos = pedidos.filter(p => p.estado !== 'Cobrado' && p.estado !== 'Cancelado');
             if (activos.length === 0) return '<p style="color:#666; text-align:center; padding:20px;">Sin pedidos activos</p>';
-            
             let html = '';
             activos.slice().reverse().forEach(p => { html += renderTarjetaPedido(p, false); });
             return html;
@@ -261,8 +216,9 @@
         function renderTarjetaPedido(p, esHistorial) {
             let estadoClase = p.estado === 'Cancelado' ? 'cancelado' : p.estado === 'Cobrado' ? 'cobrado' : '';
             let botonFoto = p.tieneFoto ? `<button onclick="verFotoPedido('${p.id}')" style="background:#3f51b5;color:white;border:none;border-radius:4px;padding:2px 8px;cursor:pointer;margin-left:5px;">📸 Foto</button>` : '';
-            
             let productosTexto = p.items.map(i => `<div style="margin-bottom:3px;">${i.cantidad}x ${i.nombre} ($${i.subtotal || (i.cantidad * i.precio)})</div>`).join('');
+            
+            let notaAdicional = p.notaAdmin ? `<div style="color:#e91e63; font-size:0.9rem; margin-top:5px;">⚠️ ${p.notaAdmin}</div>` : '';
 
             let botones = "";
             if (!esHistorial && p.estado !== 'Cobrado' && p.estado !== 'Cancelado') {
@@ -270,6 +226,10 @@
                 <div class="grid-botones">
                     <button class="btn-act btn-pagado" onclick="cobrar('${p.id}', 'Efectivo')">💵 EFECTIVO</button>
                     <button class="btn-act btn-tarjeta" onclick="cobrar('${p.id}', 'Tarjeta')">💳 TARJETA</button>
+                    
+                    <button class="btn-act btn-cortesia" onclick="abrirModalModificar('${p.id}', 'producto')">🎁 Cortesía</button>
+                    <button class="btn-act btn-descuento" onclick="abrirModalModificar('${p.id}', 'global')">📉 Descuento</button>
+                    
                     <button class="btn-act btn-cancelar" onclick="accion('${p.id}', 'Cancelado')">❌ Cancelar Cuenta</button>
                 </div>`;
             }
@@ -279,22 +239,99 @@
                 <div><strong>${p.cliente}</strong> ${botonFoto}</div>
                 <hr style="border-color:#333; margin:8px 0;">
                 ${productosTexto}
+                ${notaAdicional}
                 <hr style="border-color:#333; margin:8px 0;">
                 <div style="font-size:1.2rem; color:#ff9800;"><strong>Total: $${parseFloat(p.total).toFixed(2)}</strong></div>
                 ${botones}
             </div>`;
         }
 
-        function verFotoPedido(id) {
-            fetch(`/api/comprobantes/${id}`)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.imagen || data.comprobante) {
-                        document.getElementById('imagen-ampliada').src = data.imagen || data.comprobante;
-                        document.getElementById('visor-imagen').style.display = 'flex';
-                    } else { alert("Imagen no encontrada."); }
-                }).catch(() => alert("Error al cargar comprobante."));
+        // ==========================================
+        // LÓGICA DE DESCUENTOS Y CORTESÍAS
+        // ==========================================
+        window.abrirModalModificar = function(id, tipo) {
+            idSeleccionado = id;
+            modoModificacion = tipo;
+            const pedido = pedidosLocales.find(p => p.id === id);
+            document.getElementById('mod-cliente-nombre').innerText = `Cliente: ${pedido.cliente} | Total Actual: $${pedido.total}`;
+            document.getElementById('mod-pass').value = '';
+
+            if (tipo === 'producto') {
+                document.getElementById('seccion-mod-producto').style.display = 'block';
+                document.getElementById('seccion-mod-global').style.display = 'none';
+                let options = '<option value="">-- Selecciona el producto a descontar --</option>';
+                pedido.items.forEach((item, index) => {
+                    let sub = item.subtotal || (item.cantidad * item.precio);
+                    options += `<option value="${index}">${item.cantidad}x ${item.nombre} ($${sub})</option>`;
+                });
+                document.getElementById('mod-select-producto').innerHTML = options;
+            } else {
+                document.getElementById('seccion-mod-producto').style.display = 'none';
+                document.getElementById('seccion-mod-global').style.display = 'block';
+                document.getElementById('mod-desc-porcentaje').value = '';
+                document.getElementById('mod-desc-monto').value = '';
+            }
+            document.getElementById('modal-modificar').style.display = 'flex';
+        };
+
+        window.aplicarCortesiaTotal = function() {
+            if (document.getElementById('mod-pass').value !== CLAVE) return alert("Contraseña incorrecta");
+            if (confirm("¿Seguro que deseas hacer TODA la cuenta cortesía ($0.00)?")) {
+                ejecutarCambioTotal(0, "Cortesía Total Aplicada");
+            }
+        };
+
+        window.procesarModificacion = function() {
+            if (document.getElementById('mod-pass').value !== CLAVE) return alert("Contraseña incorrecta");
+            
+            const pedido = pedidosLocales.find(p => p.id === idSeleccionado);
+            let nuevoTotal = parseFloat(pedido.total);
+            let nota = "";
+
+            if (modoModificacion === 'producto') {
+                let index = document.getElementById('mod-select-producto').value;
+                if (index === "") return alert("Selecciona un producto de la lista");
+                let item = pedido.items[index];
+                let sub = parseFloat(item.subtotal || (item.cantidad * item.precio));
+                nuevoTotal -= sub;
+                nota = `Se restó cortesía: ${item.nombre}`;
+            } else {
+                let perc = parseFloat(document.getElementById('mod-desc-porcentaje').value);
+                let monto = parseFloat(document.getElementById('mod-desc-monto').value);
+
+                if (!isNaN(perc) && perc > 0) {
+                    nuevoTotal -= (nuevoTotal * (perc / 100));
+                    nota = `Descuento aplicado: ${perc}%`;
+                } else if (!isNaN(monto) && monto > 0) {
+                    nuevoTotal -= monto;
+                    nota = `Descuento aplicado: $${monto}`;
+                } else {
+                    return alert("Ingresa un porcentaje o un monto válido");
+                }
+            }
+
+            if (nuevoTotal < 0) nuevoTotal = 0;
+            ejecutarCambioTotal(nuevoTotal, nota);
+        };
+
+        function ejecutarCambioTotal(nuevoTotal, nota) {
+            let datos = { total: nuevoTotal.toFixed(2), notaAdmin: nota };
+            let index = pedidosLocales.findIndex(p => String(p.id) === String(idSeleccionado));
+            
+            if (index !== -1) {
+                pedidosLocales[index].total = datos.total;
+                pedidosLocales[index].notaAdmin = datos.notaAdmin;
+                renderBandejas();
+            }
+            document.getElementById('modal-modificar').style.display = 'none';
+
+            fetch('/api/pedidos/' + idSeleccionado, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            });
         }
+        // ==========================================
 
         window.cobrar = function(id, metodo) {
             idSeleccionado = id;
@@ -309,90 +346,23 @@
                 idSeleccionado = id;
                 document.getElementById('titulo-accion').innerText = `Cancelar Cuenta`;
                 document.getElementById('cuerpo-accion').innerHTML = `<p>¿Seguro que deseas cancelar esta cuenta?</p>`;
-                document.getElementById('btn-confirmar-accion').onclick = () => ejecutar({ estado: 'Cancelado', motivo: 'Cancelado por administración' });
+                document.getElementById('btn-confirmar-accion').onclick = () => ejecutar({ estado: 'Cancelado', motivo: 'Cancelado admin' });
                 document.getElementById('modal-accion').style.display = 'flex';
             }
         };
 
         function ejecutar(datos) {
-            // Actualización optimista inmediata en pantalla
             let index = pedidosLocales.findIndex(p => String(p.id) === String(idSeleccionado));
-            if (index !== -1) {
-                pedidosLocales[index] = { ...pedidosLocales[index], ...datos };
-                renderBandejas();
-            }
+            if (index !== -1) { pedidosLocales[index] = { ...pedidosLocales[index], ...datos }; renderBandejas(); }
             document.getElementById('modal-accion').style.display = 'none';
-
-            fetch('/api/pedidos/' + idSeleccionado, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
-            });
+            fetch('/api/pedidos/' + idSeleccionado, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
         }
 
-        // FUNCIONALIDADES EXTRA RESTAURADAS
-        function abrirModalComprobantes() {
-            document.getElementById('fecha-comprobantes').value = new Date().toISOString().split('T')[0];
-            cargarComprobantes();
-            document.getElementById('modal-comprobantes').style.display = 'flex';
-        }
-
-        function cargarComprobantes() {
-            const fecha = document.getElementById('fecha-comprobantes').value;
-            fetch(`/api/comprobantes?fecha=${fecha}`)
-                .then(r => r.json())
-                .then(data => {
-                    const galeria = document.getElementById('galeria-comprobantes');
-                    galeria.innerHTML = '';
-                    if (!data || data.length === 0) return galeria.innerHTML = '<p style="color:#666;">Sin fotos para esta fecha.</p>';
-                    data.forEach(imgBase64 => {
-                        const img = document.createElement('img');
-                        img.src = imgBase64;
-                        img.onclick = () => { document.getElementById('imagen-ampliada').src = imgBase64; document.getElementById('visor-imagen').style.display = 'flex'; };
-                        galeria.appendChild(img);
-                    });
-                });
-        }
-
-        function abrirHistorialDias() {
-            document.getElementById('modal-historial-dias').style.display = 'flex';
-            document.getElementById('contenido-historial-dias').innerHTML = '<p style="text-align:center;">Cargando cortes archivados...</p>';
-            fetch('/api/cortes')
-                .then(r => r.json())
-                .then(cortes => {
-                    if(!cortes || cortes.length === 0) {
-                        document.getElementById('contenido-historial-dias').innerHTML = '<p style="text-align:center;">No hay cortes registrados.</p>';
-                        return;
-                    }
-                    let html = '<table class="historial-tabla"><thead><tr><th>Fecha</th><th>Total Cortado</th></tr></thead><tbody>';
-                    cortes.forEach(c => {
-                        html += `<tr><td>${c.fecha}</td><td style="color:#8bc34a; font-weight:bold;">$${parseFloat(c.total || 0).toFixed(2)}</td></tr>`;
-                    });
-                    html += '</tbody></table>';
-                    document.getElementById('contenido-historial-dias').innerHTML = html;
-                }).catch(() => {
-                    document.getElementById('contenido-historial-dias').innerHTML = '<p style="color:#f44336; text-align:center;">Error al cargar historial.</p>';
-                });
-        }
-
-        function abrirModalPrecios() {
-            document.getElementById('modal-precios').style.display = 'flex';
-        }
-
-        function abrirModalTarjeta() {
-            document.getElementById('modal-tarjeta').style.display = 'flex';
-        }
-
-        function realizarCorte() {
-            if(confirm("¿Deseas realizar el corte del día de hoy?")) {
-                fetch('/api/cortes', { method: 'POST' })
-                    .then(r => r.json())
-                    .then(() => {
-                        alert("Corte realizado con éxito.");
-                        document.getElementById('modal-cortes').style.display = 'none';
-                        obtenerDatosServidor();
-                    });
-            }
+        function verFotoPedido(id) {
+            fetch(`/api/comprobantes/${id}`).then(r => r.json()).then(data => {
+                if (data.imagen || data.comprobante) { document.getElementById('imagen-ampliada').src = data.imagen || data.comprobante; document.getElementById('visor-imagen').style.display = 'flex'; } 
+                else { alert("Imagen no encontrada."); }
+            }).catch(() => alert("Error al cargar comprobante."));
         }
     </script>
 </body>

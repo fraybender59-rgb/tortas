@@ -11,19 +11,21 @@
     .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .search-bar { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; }
     
-    table { width: 100%; border-collapse: collapse; }
-    th { background: #333; color: white; padding: 12px; text-align: left; }
-    td { padding: 12px; border-bottom: 1px solid #ddd; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th { background: #222; color: white; padding: 12px; text-align: left; }
+    td { padding: 12px; border-bottom: 1px solid #ddd; vertical-align: middle; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
     tr:hover { background-color: #f1f1f1; }
     
     .item-stock { font-size: 1.2em; font-weight: bold; color: #2e7d32; text-align: center; }
     .item-stock.bajo { color: #d32f2f; }
     .controls { display: flex; gap: 5px; justify-content: center; }
     .input-cant { width: 60px; padding: 6px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
-    .btn { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; }
+    .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 1.1em;}
     .btn-add { background: #1976d2; }
     .btn-sub { background: #ff9800; }
     .nav-btn { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #333; color: white; text-decoration: none; border-radius: 5px; }
+    .error-msg { text-align: center; padding: 20px; color: #d32f2f; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -35,13 +37,13 @@
     <table>
       <thead>
         <tr>
-          <th>Producto</th>
-          <th style="text-align:center;">Existencias</th>
-          <th style="text-align:center;">Ajustar Manual</th>
+          <th style="width: 40%;">Producto</th>
+          <th style="text-align:center; width: 30%;">Existencias</th>
+          <th style="text-align:center; width: 30%;">Ajustar Manual</th>
         </tr>
       </thead>
       <tbody id="inventoryContainer">
-        <!-- Generado por JS -->
+        <tr><td colspan="3" style="text-align:center; padding: 30px;">⏳ Cargando inventario desde la base de datos...</td></tr>
       </tbody>
     </table>
   </div>
@@ -53,10 +55,22 @@
       try {
         const res = await fetch('/api/inventario');
         const data = await res.json();
+        
+        const container = document.getElementById('inventoryContainer');
+        
+        // COMPROBACIÓN: Si no hay datos, muestra un error visible.
+        if (!data || data.length === 0) {
+            container.innerHTML = '<tr><td colspan="3" class="error-msg">⚠️ La base de datos está vacía o no se pudo conectar. Asegúrate de tener productos registrados.</td></tr>';
+            return;
+        }
+
         inventarioGlobal = {};
         data.forEach(item => { inventarioGlobal[item.nombre] = item.cantidad || 0; });
         renderInventario();
-      } catch (e) { console.error("Error al cargar inventario", e); }
+      } catch (e) { 
+        document.getElementById('inventoryContainer').innerHTML = '<tr><td colspan="3" class="error-msg">❌ Error al conectar con el servidor.</td></tr>';
+        console.error("Error al cargar inventario", e); 
+      }
     }
 
     function renderInventario() {
@@ -99,7 +113,7 @@
     }
 
     cargarInventario();
-    setInterval(cargarInventario, 30000); // Refresco automático cada 30 seg
+    setInterval(cargarInventario, 30000);
   </script>
 </body>
 </html>
