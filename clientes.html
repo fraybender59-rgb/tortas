@@ -12,7 +12,7 @@
         .btn-categoria:hover { background: #333; }
         .btn-categoria.activa { background: #8bc34a; color: #111; border-color: #8bc34a; }
         .categoria-seccion { display: none; }
-        .producto-card { background: #1e1e24; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; gap: 5px; }
+        .producto-card { background: #1e1e24; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; gap: 5px; transition: 0.3s; }
         .producto-header { display: flex; justify-content: space-between; align-items: center; }
         .producto-nombre { font-size: 1.2rem; font-weight: bold; color: #fff; }
         .producto-precio { color: #00bcd4; font-weight: bold; font-size: 1.1rem; }
@@ -45,7 +45,7 @@
         <p>Tortas Gigantes - El tamaño sí importa</p>
     </div>
 
-    <div id="contenedor-menu">Cargando menú...</div>
+    <div id="contenedor-menu">Cargando menú y sincronizando inventario...</div>
 
     <div class="carrito-flotante">
         <div style="font-size:1.2rem; font-weight:bold;">Total: $<span id="total-flotante">0.00</span></div>
@@ -148,7 +148,21 @@
         };
 
         // ===================== CARGAR MENÚ LOCAL =====================
-        function cargarMenuLocal() {
+        async function cargarMenuLocal() {
+            // Obtener el inventario en vivo para cruzar estados de bloqueo y hora
+            let estadosInventario = {};
+            try {
+                const res = await fetch('/api/inventario');
+                if (res.ok) {
+                    const inventarioBD = await res.json();
+                    inventarioBD.forEach(item => {
+                        estadosInventario[item.nombre] = item;
+                    });
+                }
+            } catch (err) {
+                console.warn("No se pudo conectar con el inventario en vivo.", err);
+            }
+
             try {
                 let htmlBotones = '<div class="categorias-container">';
                 let htmlProductos = '';
@@ -161,16 +175,41 @@
                     
                     menuLocal[categoria].forEach(prod => {
                         let idInput = prod.nombre.replace(/[^a-zA-Z0-9]/g, '');
+                        
+                        // Validar bloqueos con los datos de Firebase
+                        let productoDB = estadosInventario[prod.nombre] || {};
+                        let estaBloqueado = productoDB.bloqueado === true;
+                        let limiteHora = productoDB.horaBloqueo;
+                        
+                        if (limiteHora) {
+                            const ahora = new Date();
+                            const horas = String(ahora.getHours()).padStart(2, '0');
+                            const minutos = String(ahora.getMinutes()).padStart(2, '0');
+                            const horaActual = `${horas}:${minutos}`;
+                            
+                            // Comparación de horas. Si la actual es mayor o igual, se bloquea.
+                            if (horaActual >= limiteHora) {
+                                estaBloqueado = true;
+                            }
+                        }
+
+                        // Generación de estilos dinámicos si está bloqueado
+                        let atributosBloqueo = estaBloqueado ? 'disabled style="background: #444; color: #888; cursor: not-allowed;"' : '';
+                        let textoBoton = estaBloqueado ? '🚫 Agotado' : 'Añadir al Carrito';
+                        let opacidadCard = estaBloqueado ? 'style="opacity: 0.5; border-color: #333; filter: grayscale(80%);"' : '';
+                        let alertaHora = (limiteHora && !estaBloqueado) ? `<div style="color:#f44336; font-size:0.8rem; margin-top:5px; font-weight:bold;">Disponible hasta: ${limiteHora} hrs</div>` : '';
+
                         htmlProductos += `
-                        <div class="producto-card">
+                        <div class="producto-card" ${opacidadCard}>
                             <div class="producto-header">
                                 <span class="producto-nombre">${prod.nombre}</span>
                                 <span class="producto-precio">$${prod.precio}</span>
                             </div>
                             <div class="producto-desc">${prod.descripcion || ''}</div>
+                            ${alertaHora}
                             <div class="controles-agregar">
-                                <input type="text" id="nota-${idInput}" class="input-comentario" placeholder="Ej. Sin cebolla, extra mayo...">
-                                <button class="btn-agregar" onclick="agregarAlCarrito('${prod.nombre}', ${prod.precio}, '${idInput}')">Añadir al Carrito</button>
+                                <input type="text" id="nota-${idInput}" class="input-comentario" placeholder="Ej. Sin cebolla, extra mayo..." ${atributosBloqueo}>
+                                <button class="btn-agregar" onclick="agregarAlCarrito('${prod.nombre}', ${prod.precio}, '${idInput}')" ${atributosBloqueo}>${textoBoton}</button>
                             </div>
                         </div>`;
                     });
@@ -185,6 +224,9 @@
         }
 
         cargarMenuLocal();
+
+        // Refrescar estado del inventario cada 60 segundos por si hay bloqueos manuales nuevos
+        setInterval(cargarMenuLocal, 60000);
 
         // ===================== FUNCIONES DEL MENÚ =====================
         function mostrarCategoria(idCat) {
@@ -309,7 +351,7 @@
                 total: total,
                 estado: "Pendiente",
                 metodoPagoInicial: metodo,
-                comprobanteAdjunto: fotoBase64, // 🔴 CAMBIO IMPORTANTE: se envía como 'comprobanteAdjunto' para que la API lo maneje
+                comprobanteAdjunto: fotoBase64,
                 origen: 'cliente'
             };
 
