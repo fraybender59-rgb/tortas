@@ -5,6 +5,7 @@ const admin = require('firebase-admin');
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); // Permitir imágenes en base64
+app.use(express.static('public')); // NUEVO: Servir archivos HTML desde la carpeta public
 
 // ==========================================
 // INICIALIZACIÓN DE FIREBASE
@@ -134,7 +135,14 @@ app.get('/api/cuentas', async (req, res) => {
   try {
     const snapshot = await cuentasRef.once('value');
     const data = snapshot.val();
-    res.status(200).json(data ? Object.values(data) : []);
+    
+    // CORRECCIÓN: Conservar el ID de Firebase en la variable 'id'
+    const cuentasArray = data ? Object.keys(data).map(key => ({
+        id: key,
+        ...data[key]
+    })) : [];
+    
+    res.status(200).json(cuentasArray);
   } catch (error) {
     console.error("Error al obtener cuentas:", error);
     res.status(500).json({ error: 'Error al obtener cuentas' });
