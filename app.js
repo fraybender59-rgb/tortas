@@ -1,306 +1,218 @@
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
+const path = require('path');
 
 const app = express();
+
+// 👉 CORRECCIÓN 1: Aumentar el límite de tamaño para permitir subir fotos en Base64 sin dar Error 500.
 app.use(cors());
-app.use(express.json({ limit: '10mb' })); // Permitir imágenes en base64
-app.use(express.static('public')); // NUEVO: Servir archivos HTML desde la carpeta public
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// ==========================================
-// INICIALIZACIÓN DE FIREBASE
-// ==========================================
-if (!admin.apps.length) {
-  // Validar variables de entorno esenciales
-  const requiredEnv = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY', 'FIREBASE_DATABASE_URL'];
-  const missing = requiredEnv.filter(key => !process.env[key]);
-  if (missing.length > 0) {
-    console.error(`❌ Faltan variables de entorno: ${missing.join(', ')}`);
-  }
-
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
-    }),
-    databaseURL: process.env.FIREBASE_DATABASE_URL
-  });
+// 👉 CORRECCIÓN 2: Inicialización segura de Firebase.
+let serviceAccount;
+try {
+    // ASEGÚRATE de que el nombre de abajo coincida con el archivo JSON que descargaste de Firebase.
+    serviceAccount = require('./firebase-key.json'); 
+    
+    if (!admin.apps.length) {
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        console.log("✅ Firebase conectado correctamente");
+    }
+} catch (err) {
+    console.error("❌ ERROR FATAL: No se pudo inicializar Firebase. Revisa que el archivo 'firebase-key.json' exista.", err.message);
 }
 
-const db = admin.database();
-const inventarioRef = db.ref('inventario');
-const cuentasRef = db.ref('cuentas');
+const db = admin.apps.length ? admin.firestore() : null;
+
+// Servir archivos HTML estáticos (administracion.html, clientes.html, etc.)
+app.use(express.static(path.join(__dirname)));
 
 // ==========================================
-// RUTAS DE INVENTARIO (existentes)
+// RUTAS DE INVENTARIO
 // ==========================================
-
-// GET: Obtener todo el inventario
 app.get('/api/inventario', async (req, res) => {
-  try {
-    const snapshot = await inventarioRef.once('value');
-    const data = snapshot.val();
-    const inventarioArray = data ? Object.values(data) : [];
-    res.status(200).json(inventarioArray);
-  } catch (error) {
-    console.error("Error al obtener inventario:", error);
-    res.status(500).json({ error: 'Error al obtener inventario' });
-  }
+    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
+    try {
+        const snapshot = await db.collection('inventario').get();
+        const inventario = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.status(200).json(inventario);
+    } catch (error) {
+        console.error("Error al obtener inventario:", error);
+        res.status(500).json({ error: "Error interno al leer inventario" });
+    }
 });
 
-// POST: Crear nuevo producto o inicializarlo
 app.post('/api/inventario', async (req, res) => {
-  try {
-    const { nombre, cantidad } = req.body;
-    if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
-    
-    const idNombre = nombre.replace(/[^a-zA-Z0-9]/g, '_');
-    const productoRef = inventarioRef.child(idNombre);
-    
-    const snapshot = await productoRef.once('value');
-    if (!snapshot.exists()) {
-      await productoRef.set({
-        nombre: nombre,
-        cantidad: cantidad || 0,
-        bloqueado: false,
-        horaBloqueo: null
-      });
+    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
+    try {
+        const { nombre, cantidad } = req.body;
+        const docRef = await db.collection('inventario').add({ nombre, cantidad: cantidad || 0, bloqueado: false, horaBloqueo: null });
+        res.status(201).json({ success: true, id: docRef.id });
+    } catch (error) {
+        console.error("Error al crear producto:", error);
+        res.status(500).json({ error: "Error interno al crear producto" });
     }
-    res.status(200).json({ success: true, mensaje: 'Producto registrado' });
-  } catch (error) {
-    console.error("Error al crear producto:", error);
-    res.status(500).json({ error: 'Error interno' });
-  }
 });
 
-// POST: Sumar o restar stock
 app.post('/api/inventario/modificar', async (req, res) => {
-  try {
-    const { nombre, cantidad, operacion } = req.body;
-    const idNombre = nombre.replace(/[^a-zA-Z0-9]/g, '_');
-    const productoRef = inventarioRef.child(idNombre);
-    
-    const snapshot = await productoRef.once('value');
-    if (snapshot.exists()) {
-      let stockActual = snapshot.val().cantidad || 0;
-      let nuevoStock = operacion === 'sumar' ? stockActual + cantidad : stockActual - cantidad;
-      if (nuevoStock < 0) nuevoStock = 0;
-      
-      await productoRef.update({ cantidad: nuevoStock });
-      res.status(200).json({ success: true, mensaje: 'Stock actualizado' });
-    } else {
-      res.status(404).json({ error: 'Producto no encontrado' });
+    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
+    try {
+        const { nombre, cantidad, operacion } = req.body;
+        const snapshot = await db.collection('inventario').where('nombre', '==', nombre).limit(1).get();
+        
+        if (snapshot.empty) return res.status(404).json({ error: "Producto no encontrado" });
+
+        const doc = snapshot.docs[0];
+        const data = doc.data();
+        let nuevoStock = data.cantidad || 0;
+
+        if (operacion === 'sumar') nuevoStock += parseInt(cantidad);
+        if (operacion === 'restar') nuevoStock -= parseInt(cantidad);
+
+        await doc.ref.update({ cantidad: nuevoStock });
+        res.status(200).json({ success: true, nuevoStock });
+    } catch (error) {
+        console.error("Error al modificar stock:", error);
+        res.status(500).json({ error: "Error interno al modificar stock" });
     }
-  } catch (error) {
-    console.error("Error al modificar stock:", error);
-    res.status(500).json({ error: 'Error interno' });
-  }
 });
 
-// POST: Bloquear producto o asignar temporizador
 app.post('/api/inventario/bloquear', async (req, res) => {
-  try {
-    const { nombre, bloqueado, horaBloqueo } = req.body;
-    
-    if (!nombre) {
-      return res.status(400).json({ error: 'El nombre del producto es requerido' });
+    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
+    try {
+        const { nombre, bloqueado, horaBloqueo } = req.body;
+        const snapshot = await db.collection('inventario').where('nombre', '==', nombre).limit(1).get();
+        
+        if (snapshot.empty) return res.status(404).json({ error: "Producto no encontrado" });
+
+        await snapshot.docs[0].ref.update({ bloqueado, horaBloqueo });
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error("Error al bloquear producto:", error);
+        res.status(500).json({ error: "Error interno al bloquear" });
     }
+});
 
-    const idNombre = nombre.replace(/[^a-zA-Z0-9]/g, '_');
-    const productoRef = inventarioRef.child(idNombre);
-    
-    const snapshot = await productoRef.once('value');
-    if (snapshot.exists()) {
-      await productoRef.update({
-        bloqueado: bloqueado !== undefined ? bloqueado : false,
-        horaBloqueo: horaBloqueo || null
-      });
-      res.status(200).json({ success: true, mensaje: 'Estado de bloqueo actualizado' });
-    } else {
-      res.status(404).json({ error: 'Producto no encontrado' });
+// ==========================================
+// RUTAS DE PEDIDOS Y CUENTAS
+// ==========================================
+app.get('/api/pedidos', async (req, res) => {
+    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
+    try {
+        const snapshot = await db.collection('pedidos').orderBy('fecha', 'desc').limit(100).get();
+        const pedidos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.status(200).json(pedidos);
+    } catch (error) {
+        console.error("Error al obtener pedidos:", error);
+        res.status(500).json({ error: "Error al cargar pedidos" });
     }
-  } catch (error) {
-    console.error('Error al actualizar estado de bloqueo:', error);
-    res.status(500).json({ error: 'Error interno al bloquear producto' });
-  }
 });
 
-// ==========================================
-// RUTAS DE CUENTAS (existentes + nuevas)
-// ==========================================
-
-// GET: Obtener todas las cuentas activas
-app.get('/api/cuentas', async (req, res) => {
-  try {
-    const snapshot = await cuentasRef.once('value');
-    const data = snapshot.val();
-    
-    // CORRECCIÓN: Conservar el ID de Firebase en la variable 'id'
-    const cuentasArray = data ? Object.keys(data).map(key => ({
-        id: key,
-        ...data[key]
-    })) : [];
-    
-    res.status(200).json(cuentasArray);
-  } catch (error) {
-    console.error("Error al obtener cuentas:", error);
-    res.status(500).json({ error: 'Error al obtener cuentas' });
-  }
-});
-
-// PUT: Actualizar una cuenta (total, notaAdmin, etc.)
-app.put('/api/cuentas/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { total, notaAdmin, metodo, estado } = req.body;
-
-    if (!id) return res.status(400).json({ error: 'ID de cuenta requerido' });
-
-    const cuentaRef = cuentasRef.child(id);
-    const snapshot = await cuentaRef.once('value');
-    if (!snapshot.exists()) {
-      return res.status(404).json({ error: 'Cuenta no encontrada' });
-    }
-
-    const updates = {};
-    if (total !== undefined) updates.total = parseFloat(total);
-    if (notaAdmin !== undefined) updates.notaAdmin = notaAdmin;
-    if (metodo !== undefined) updates.metodoPago = metodo;
-    if (estado !== undefined) updates.estado = estado;
-
-    await cuentaRef.update(updates);
-    res.status(200).json({ success: true, mensaje: 'Cuenta actualizada' });
-  } catch (error) {
-    console.error("Error al actualizar cuenta:", error);
-    res.status(500).json({ error: 'Error interno al actualizar la cuenta' });
-  }
-});
-
-// DELETE: Eliminar una cuenta (cuando se cobra o cancela)
-app.delete('/api/cuentas/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    await cuentasRef.child(id).remove();
-    res.status(200).json({ success: true, mensaje: 'Cuenta eliminada correctamente' });
-  } catch (error) {
-    console.error("Error al eliminar cuenta:", error);
-    res.status(500).json({ error: 'Error interno al borrar la cuenta' });
-  }
-});
-
-// ==========================================
-// NUEVA RUTA: Crear un pedido (desde clientes o comandero)
-// ==========================================
 app.post('/api/pedidos', async (req, res) => {
-  try {
-    const { cliente, items, total, estado, metodoPagoInicial, comprobanteAdjunto, origen } = req.body;
-
-    // Validaciones básicas
-    if (!cliente || !items || items.length === 0) {
-      return res.status(400).json({ error: 'Faltan datos del pedido (cliente y items son obligatorios)' });
+    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
+    try {
+        const pedidoData = req.body;
+        pedidoData.fecha = new Date().toISOString();
+        
+        const docRef = await db.collection('pedidos').add(pedidoData);
+        res.status(201).json({ success: true, id: docRef.id });
+    } catch (error) {
+        console.error("Error al guardar pedido:", error);
+        res.status(500).json({ error: "Error interno al guardar el pedido" });
     }
+});
 
-    // Calcular total si no viene (por seguridad)
-    let totalCalculado = total;
-    if (totalCalculado === undefined) {
-      totalCalculado = items.reduce((sum, item) => sum + (item.precio * (item.cantidad || 1)), 0);
+app.put('/api/pedidos/:id', async (req, res) => {
+    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        await db.collection('pedidos').doc(id).update(updates);
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error("Error al actualizar pedido:", error);
+        res.status(500).json({ error: "Error al actualizar" });
     }
+});
 
-    // Crear objeto de cuenta con todos los campos necesarios
-    const nuevoPedido = {
-      cliente: cliente,
-      items: items.map(item => ({
-        nombre: item.nombre,
-        cantidad: item.cantidad || 1,
-        precio: item.precio,
-        subtotal: (item.precio * (item.cantidad || 1))
-      })),
-      total: parseFloat(totalCalculado),
-      estado: estado || 'Pendiente',
-      fecha: new Date().toISOString(),
-      origen: origen || 'cliente',
-      metodoPagoInicial: metodoPagoInicial || 'Efectivo',
-      tieneFoto: !!comprobanteAdjunto,
-      comprobante: comprobanteAdjunto || null, // Guardamos la imagen en base64 (puede ser pesado)
-      notaAdmin: '',
-      // Campos adicionales para la administración
-      cobrado: false,
-      pagadoCon: null
-    };
+app.get('/api/cuentas', async (req, res) => {
+    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
+    try {
+        const snapshot = await db.collection('pedidos').get();
+        const cuentas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.status(200).json(cuentas);
+    } catch (error) {
+        console.error("Error al obtener cuentas:", error);
+        res.status(500).json({ error: "Error al cargar cuentas" });
+    }
+});
 
-    // Guardar en Firebase bajo la referencia 'cuentas'
-    const nuevaRef = cuentasRef.push();
-    await nuevaRef.set(nuevoPedido);
+app.put('/api/cuentas/:id', async (req, res) => {
+    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
+    try {
+        const { id } = req.params;
+        await db.collection('pedidos').doc(id).update(req.body);
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error("Error al modificar cuenta:", error);
+        res.status(500).json({ error: "Error al modificar" });
+    }
+});
 
-    res.status(201).json({ 
-      success: true, 
-      id: nuevaRef.key, 
-      mensaje: 'Pedido creado exitosamente' 
-    });
-  } catch (error) {
-    console.error("Error al crear pedido:", error);
-    res.status(500).json({ error: 'Error interno al guardar el pedido' });
-  }
+app.delete('/api/cuentas/:id', async (req, res) => {
+    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
+    try {
+        const { id } = req.params;
+        await db.collection('pedidos').doc(id).delete();
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error("Error al eliminar cuenta:", error);
+        res.status(500).json({ error: "Error al eliminar" });
+    }
 });
 
 // ==========================================
-// RUTA PARA OBTENER COMPROBANTE (imagen) de un pedido
+// RUTA PARA OBTENER COMPROBANTE
 // ==========================================
 app.get('/api/comprobantes/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!id) return res.status(400).json({ error: 'ID requerido' });
-
-    const cuentaRef = cuentasRef.child(id);
-    const snapshot = await cuentaRef.once('value');
-    if (!snapshot.exists()) {
-      return res.status(404).json({ error: 'Pedido no encontrado' });
+    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
+    try {
+        const doc = await db.collection('pedidos').doc(req.params.id).get();
+        if (!doc.exists) return res.status(404).json({ error: "No encontrado" });
+        
+        const data = doc.data();
+        res.status(200).json({ imagen: data.comprobanteAdjunto || null });
+    } catch (error) {
+        console.error("Error al obtener comprobante:", error);
+        res.status(500).json({ error: "Error al cargar imagen" });
     }
-
-    const data = snapshot.val();
-    if (data.comprobante) {
-      res.status(200).json({ imagen: data.comprobante });
-    } else {
-      res.status(404).json({ error: 'No hay comprobante para este pedido' });
-    }
-  } catch (error) {
-    console.error("Error al obtener comprobante:", error);
-    res.status(500).json({ error: 'Error al obtener el comprobante' });
-  }
 });
 
 // ==========================================
-// RUTA PARA CONFIGURACIÓN DE TARJETA (número de transferencia)
+// CONFIGURACIÓN DE TARJETA
 // ==========================================
-app.get('/api/config/tarjeta', (req, res) => {
-  // Puedes cambiar este número por el que desees o leerlo de una variable de entorno
-  const numero = process.env.NUMERO_TARJETA || '1234 5678 9012 3456';
-  res.status(200).json({ numero });
+app.get('/api/config/tarjeta', async (req, res) => {
+    res.status(200).json({ numero: "1234 5678 9012 3456" });
 });
 
 // ==========================================
-// MANEJO DE RUTAS NO ENCONTRADAS
+// MANEJO DE RUTAS NO ENCONTRADAS Y ERRORES GLOBALES
 // ==========================================
-app.use((req, res) => {
-  res.status(404).json({ error: 'Ruta no encontrada' });
+app.use((req, res, next) => {
+    res.status(404).json({ error: "Ruta no encontrada" });
 });
 
-// ==========================================
-// MANEJADOR DE ERRORES GLOBAL
-// ==========================================
 app.use((err, req, res, next) => {
-  console.error('Error no capturado:', err);
-  res.status(500).json({ error: 'Error interno del servidor' });
+    console.error("💥 ERROR NO MANEJADO:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
 });
 
-// ==========================================
-// EXPORTAR PARA VERCELL O ESCUCHAR LOCAL
-// ==========================================
-const PORT = process.env.PORT || 3000;
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log(`Servidor local corriendo en puerto ${PORT}`);
-  });
-}
-module.exports = app;
+// 👉 CONFIGURACIÓN DEL PUERTO (Evita el error 504)
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Servidor corriendo en el puerto ${port}`);
+});
