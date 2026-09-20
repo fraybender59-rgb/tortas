@@ -351,19 +351,27 @@
             }
         };
 
+        // 👉 FUNCIÓN CORREGIDA: Ahora actualiza (PUT) en lugar de borrar (DELETE)
         function ejecutar(datos) {
             document.getElementById('modal-accion').style.display = 'none';
 
+            // Actualización local inmediata para que la UI se sienta instantánea y sin parpadeos
             let index = pedidosLocales.findIndex(p => String(p.id) === String(idSeleccionado));
             if (index !== -1) { 
-                pedidosLocales.splice(index, 1); 
+                // Actualizamos el objeto local agregándole el nuevo estado
+                pedidosLocales[index] = { ...pedidosLocales[index], ...datos }; 
                 renderBandejas(); 
             }
 
+            // Enviar la orden de ACTUALIZAR (PUT) a Firebase enviando los datos correspondientes
             fetch('/api/cuentas/' + idSeleccionado, { 
-                method: 'DELETE' 
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(datos)
             }).then(res => {
-                if(!res.ok) console.error("Fallo al borrar en Firebase");
+                if(!res.ok) console.error("Fallo al actualizar el estado en Firebase");
             }).catch(err => console.error("Error de red:", err));
         }
 
@@ -376,3 +384,5 @@
     </script>
 </body>
 </html>
+
+
