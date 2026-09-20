@@ -162,15 +162,29 @@ app.get('/api/cuentas', async (req, res) => {
     }
 });
 
+// 👉 AQUÍ ESTÁ LA MEJORA: Endpoint PUT fortalecido para asegurar el cobro en Firestore
 app.put('/api/cuentas/:id', async (req, res) => {
     if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
     try {
         const { id } = req.params;
-        await db.collection('pedidos').doc(id).update(req.body);
-        res.status(200).json({ success: true });
+        const datosAActualizar = req.body; // Recibe el estado: 'Cobrado' desde administracion.html
+        
+        const cuentaRef = db.collection('pedidos').doc(id);
+        const doc = await cuentaRef.get();
+        
+        // Verificamos primero si la cuenta existe en Firestore
+        if (!doc.exists) {
+            return res.status(404).json({ error: "La cuenta no fue encontrada en la base de datos" });
+        }
+
+        // Actualizamos los datos
+        await cuentaRef.update(datosAActualizar);
+        
+        // Respondemos con éxito al frontend para que quite la cuenta de la pantalla
+        res.status(200).json({ success: true, message: "Cuenta cobrada y actualizada correctamente" });
     } catch (error) {
         console.error("Error al modificar cuenta:", error);
-        res.status(500).json({ error: "Error al modificar" });
+        res.status(500).json({ error: "Error interno al modificar la cuenta" });
     }
 });
 
