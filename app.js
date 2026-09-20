@@ -10,20 +10,31 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// 👉 CORRECCIÓN 2: Inicialización segura de Firebase.
-let serviceAccount;
+// 👉 CORRECCIÓN 2: Inicialización segura de Firebase (Compatible con Local y Vercel).
 try {
-    // ASEGÚRATE de que el nombre de abajo coincida con el archivo JSON que descargaste de Firebase.
-    serviceAccount = require('./firebase-key.json'); 
-    
     if (!admin.apps.length) {
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
-        });
-        console.log("✅ Firebase conectado correctamente");
+        // Verifica si estamos en Vercel leyendo las variables de entorno
+        if (process.env.FIREBASE_PROJECT_ID) {
+            admin.initializeApp({
+                credential: admin.credential.cert({
+                    projectId: process.env.FIREBASE_PROJECT_ID,
+                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                    // Reemplaza los saltos de línea escapados para que Vercel los lea bien
+                    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') 
+                })
+            });
+            console.log("✅ Firebase conectado correctamente (Modo Vercel)");
+        } else {
+            // Si no hay variables de entorno, asume que estamos en local y usa el archivo JSON
+            const serviceAccount = require('./firebase-key.json'); 
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount)
+            });
+            console.log("✅ Firebase conectado correctamente (Modo Local)");
+        }
     }
 } catch (err) {
-    console.error("❌ ERROR FATAL: No se pudo inicializar Firebase. Revisa que el archivo 'firebase-key.json' exista.", err.message);
+    console.error("❌ ERROR FATAL: No se pudo inicializar Firebase.", err.message);
 }
 
 const db = admin.apps.length ? admin.firestore() : null;
@@ -216,3 +227,4 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`Servidor corriendo en el puerto ${port}`);
 });
+
