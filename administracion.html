@@ -126,7 +126,6 @@
             </div>
         </div>
 
-        <!-- OTROS MODALES (Mantenidos igual) -->
         <div id="modal-historial" class="modal-overlay">
             <div class="modal-content"><h3 style="color:#ff9800; text-align:center;">📁 Cobradas Hoy</h3><div id="total-ventas-historial" style="background: #111; color: #8bc34a; font-size: 1.3rem; text-align: center; padding: 10px; border-radius: 5px; margin-bottom: 15px;">Total: $0.00</div><div id="bandeja-historial" style="max-height: 50vh; overflow-y: auto;"></div><button class="btn-modal btn-cancel" style="width:100%;" onclick="document.getElementById('modal-historial').style.display='none'">Cerrar</button></div>
         </div>
@@ -325,11 +324,15 @@
             }
             document.getElementById('modal-modificar').style.display = 'none';
 
+            // Actualización corregida para descuentos
             fetch('/api/cuentas/' + idSeleccionado, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(datos)
-            });
+            })
+            .then(res => res.json())
+            .then(data => obtenerDatosServidor())
+            .catch(err => console.error("Error al modificar:", err));
         }
         // ==========================================
 
@@ -337,7 +340,8 @@
             idSeleccionado = id;
             document.getElementById('titulo-accion').innerText = `Cobro en ${metodo}`;
             document.getElementById('cuerpo-accion').innerHTML = `<p>¿Marcar pedido como pagado con <b>${metodo}</b>?</p>`;
-            document.getElementById('btn-confirmar-accion').onclick = () => ejecutar({ estado: 'Cobrado', metodo: metodo });
+            // Agregamos actualización de fecha para que aparezca correctamente en "Cobradas Hoy"
+            document.getElementById('btn-confirmar-accion').onclick = () => ejecutar({ estado: 'Cobrado', metodo: metodo, fecha: new Date().toISOString() });
             document.getElementById('modal-accion').style.display = 'flex';
         };
 
@@ -351,28 +355,31 @@
             }
         };
 
-        // 👉 FUNCIÓN CORREGIDA: Ahora actualiza (PUT) en lugar de borrar (DELETE)
+        // 👉 FUNCIÓN CORREGIDA Y ROBUSTA: Garantiza el envío JSON y refresca tras respuesta
         function ejecutar(datos) {
             document.getElementById('modal-accion').style.display = 'none';
 
-            // Actualización local inmediata para que la UI se sienta instantánea y sin parpadeos
+            // 1. Actualización local inmediata para UI rápida
             let index = pedidosLocales.findIndex(p => String(p.id) === String(idSeleccionado));
             if (index !== -1) { 
-                // Actualizamos el objeto local agregándole el nuevo estado
                 pedidosLocales[index] = { ...pedidosLocales[index], ...datos }; 
                 renderBandejas(); 
             }
 
-            // Enviar la orden de ACTUALIZAR (PUT) a Firebase enviando los datos correspondientes
+            // 2. Enviar petición PUT a Firebase con cabeceras estrictas
             fetch('/api/cuentas/' + idSeleccionado, { 
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(datos)
-            }).then(res => {
-                if(!res.ok) console.error("Fallo al actualizar el estado en Firebase");
-            }).catch(err => console.error("Error de red:", err));
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Respuesta servidor:", data);
+                obtenerDatosServidor(); // 3. Forzar refresco directo de la Base de Datos para limpiar sincronización
+            })
+            .catch(err => console.error("Error de red:", err));
         }
 
         function verFotoPedido(id) {
@@ -384,5 +391,4 @@
     </script>
 </body>
 </html>
-
 
