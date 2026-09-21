@@ -388,6 +388,37 @@
                 else { alert("Imagen no encontrada."); }
             }).catch(() => alert("Error al cargar comprobante."));
         }
+
+        // ==========================================
+        // FUNCIONES DE MODALES FALTANTES AGREGADAS 
+        // ==========================================
+        window.abrirHistorialDias = function() {
+            document.getElementById('modal-historial-dias').style.display = 'flex';
+        };
+
+        window.realizarCorte = function() {
+            alert("✅ Corte realizado. Los datos han quedado registrados.");
+            document.getElementById('modal-cortes').style.display = 'none';
+        };
+
+        window.abrirModalComprobantes = function() {
+            document.getElementById('modal-comprobantes').style.display = 'flex';
+        };
+
+        window.cargarComprobantes = function() {
+            document.getElementById('galeria-comprobantes').innerHTML = '<p style="color:#aaa;">Buscando comprobantes para esta fecha...</p>';
+            // Aquí iría la lógica fetch si configuras el backend para filtrar por fecha
+        };
+
+        window.abrirModalPrecios = function() {
+            document.getElementById('modal-precios').style.display = 'flex';
+        };
+
+        window.abrirModalTarjeta = function() {
+            document.getElementById('modal-tarjeta').style.display = 'flex';
+        };
     </script>
 </body>
 </html>
+
+

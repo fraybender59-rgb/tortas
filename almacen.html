@@ -10,7 +10,6 @@
     h1 { margin-bottom: 20px; text-align: center; color: #b71c1c; }
     .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     
-    /* Contador de Alertas */
     .alerta-top { background: #ffebee; color: #c62828; border: 2px solid #ef5350; padding: 15px; border-radius: 8px; text-align: center; font-size: 1.2em; font-weight: bold; margin-bottom: 20px; display: none; }
     
     .panel-creacion { background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; border: 2px dashed #4caf50;}
@@ -21,14 +20,12 @@
     .search-bar { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; }
     .inventory-grid { display: flex; flex-direction: column; gap: 10px; }
     
-    /* Tarjeta de Producto */
     .inv-card { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; background: #fafafa; border: 1px solid #e0e0e0; padding: 15px 20px; border-radius: 8px; transition: 0.3s; gap: 10px; }
     .inv-card.bloqueado-ui { background: #eeeeee; border-color: #9e9e9e; opacity: 0.8; }
     .item-name { font-size: 1.2em; font-weight: bold; color: #333; flex: 1; min-width: 200px; }
     .item-stock { font-size: 1.5em; font-weight: bold; color: #2e7d32; width: 100px; text-align: right; }
     .item-stock.bajo { color: #d32f2f; background-color: #ffcdd2; border-radius: 4px; padding: 2px 8px; text-align: center; }
     
-    /* Controles de Stock y Bloqueo */
     .controls { display: flex; align-items: center; gap: 5px; }
     .input-cant { width: 60px; padding: 8px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
     .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
@@ -52,7 +49,6 @@
   <div class="container">
     <a href="administracion.html" class="nav-btn">⬅ Volver a Administración</a>
     
-    <!-- Contador de Alertas de Stock -->
     <div id="alerta-stock" class="alerta-top">
       ⚠️ Tienes <span id="contador-rojo">0</span> productos con 10 unidades o menos.
     </div>
@@ -85,7 +81,6 @@
     ];
 
     async function autoCargarMenuCompleto() {
-      // (Función sin cambios, mantiene la inyección directa)
       let cargados = 0;
       for(let producto of MENU_COMPLETO) {
         if(!inventarioGlobal[producto]) {
@@ -107,6 +102,7 @@
       try {
         await fetch('/api/inventario', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, cantidad: stock }) });
         document.getElementById('nuevo-nombre').value = '';
+        document.getElementById('nuevo-stock').value = '0';
         cargarInventario();
       } catch(e) { alert("Error de conexión."); }
     }
@@ -117,7 +113,6 @@
         const data = await res.json();
         inventarioGlobal = {};
         
-        // Ahora guardamos un objeto completo para incluir estados de bloqueo
         data.forEach(item => {
             inventarioGlobal[item.nombre] = {
                 cantidad: item.cantidad || 0,
@@ -136,6 +131,12 @@
       const filtro = document.getElementById('buscador').value.toLowerCase();
       const items = Object.keys(inventarioGlobal).sort();
       let productosEnRojo = 0;
+
+      // GUARDAR ESTADO DE LOS INPUTS ANTES DE RE-RENDERIZAR
+      let inputsGuardados = {};
+      let timeGuardados = {};
+      document.querySelectorAll('.input-cant').forEach(inp => inputsGuardados[inp.id] = inp.value);
+      document.querySelectorAll('.input-time').forEach(inp => timeGuardados[inp.id] = inp.value);
 
       container.innerHTML = '';
 
@@ -175,7 +176,16 @@
         container.appendChild(div);
       });
       
-      // Actualizar contador superior
+      // RESTAURAR ESTADO DE LOS INPUTS DESPUÉS DE RE-RENDERIZAR
+      for(let id in inputsGuardados) {
+        let input = document.getElementById(id);
+        if(input && inputsGuardados[id] !== "1") input.value = inputsGuardados[id];
+      }
+      for(let id in timeGuardados) {
+        let input = document.getElementById(id);
+        if(input && timeGuardados[id] !== "") input.value = timeGuardados[id];
+      }
+      
       const alertaDiv = document.getElementById('alerta-stock');
       document.getElementById('contador-rojo').innerText = productosEnRojo;
       alertaDiv.style.display = productosEnRojo > 0 ? 'block' : 'none';
@@ -191,17 +201,15 @@
       } catch (e) { alert("Error al modificar."); }
     }
 
-    // NUEVAS FUNCIONES DE BLOQUEO
     async function cambiarEstadoBloqueo(nombre, estado) {
       try {
-        // Enviaremos el estado al backend. Si es bloqueo manual, limpiamos la hora programada.
         await fetch('/api/inventario/bloquear', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nombre: nombre, bloqueado: estado, horaBloqueo: null })
         });
         cargarInventario();
-      } catch (e) { alert("Error al cambiar estado de bloqueo. Verifica que app.js esté actualizado."); }
+      } catch (e) { alert("Error al cambiar estado de bloqueo."); }
     }
 
     async function programarBloqueoHora(nombre, idNombre) {

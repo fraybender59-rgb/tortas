@@ -79,11 +79,9 @@
     </div>
 
     <script>
-        // ===================== VARIABLES GLOBALES =====================
         let carrito = [];
         let fotoBase64 = null;
 
-        // ===================== MENÚ LOCAL CON DESCRIPCIONES =====================
         const menuLocal = {
             "Sencillas": [
                 { nombre: "Milanesa", precio: 75, descripcion: "Torta sencilla de milanesa de res." },
@@ -147,9 +145,10 @@
             ]
         };
 
-        // ===================== CARGAR MENÚ LOCAL =====================
+        // Identificamos la categoría activa para mantenerla al recargar
+        let categoriaActualActiva = "Sencillas";
+
         async function cargarMenuLocal() {
-            // Obtener el inventario en vivo para cruzar estados de bloqueo y hora
             let estadosInventario = {};
             try {
                 const res = await fetch('/api/inventario');
@@ -163,20 +162,32 @@
                 console.warn("No se pudo conectar con el inventario en vivo.", err);
             }
 
+            // GUARDAMOS LAS NOTAS ANTES DE RECREAR EL MENÚ
+            let notasGuardadas = {};
+            document.querySelectorAll('.input-comentario').forEach(input => {
+                if(input.value) notasGuardadas[input.id] = input.value;
+            });
+
+            // GUARDAR LA CATEGORÍA ABIERTA ACTUALMENTE
+            const btnActivo = document.querySelector('.btn-categoria.activa');
+            if (btnActivo) {
+                categoriaActualActiva = btnActivo.innerText;
+            }
+
             try {
                 let htmlBotones = '<div class="categorias-container">';
                 let htmlProductos = '';
-                let primera = true;
 
                 for (let categoria in menuLocal) {
                     let idCat = categoria.replace(/[^a-zA-Z0-9]/g, '-');
-                    htmlBotones += `<button class="btn-categoria ${primera ? 'activa' : ''}" onclick="mostrarCategoria('${idCat}')" id="btn-${idCat}">${categoria}</button>`;
-                    htmlProductos += `<div id="cat-${idCat}" class="categoria-seccion" style="display:${primera ? 'block' : 'none'};">`;
+                    let esActiva = (categoria === categoriaActualActiva);
+                    
+                    htmlBotones += `<button class="btn-categoria ${esActiva ? 'activa' : ''}" onclick="mostrarCategoria('${idCat}')" id="btn-${idCat}">${categoria}</button>`;
+                    htmlProductos += `<div id="cat-${idCat}" class="categoria-seccion" style="display:${esActiva ? 'block' : 'none'};">`;
                     
                     menuLocal[categoria].forEach(prod => {
                         let idInput = prod.nombre.replace(/[^a-zA-Z0-9]/g, '');
                         
-                        // Validar bloqueos con los datos de Firebase
                         let productoDB = estadosInventario[prod.nombre] || {};
                         let estaBloqueado = productoDB.bloqueado === true;
                         let limiteHora = productoDB.horaBloqueo;
@@ -187,13 +198,11 @@
                             const minutos = String(ahora.getMinutes()).padStart(2, '0');
                             const horaActual = `${horas}:${minutos}`;
                             
-                            // Comparación de horas. Si la actual es mayor o igual, se bloquea.
                             if (horaActual >= limiteHora) {
                                 estaBloqueado = true;
                             }
                         }
 
-                        // Generación de estilos dinámicos si está bloqueado
                         let atributosBloqueo = estaBloqueado ? 'disabled style="background: #444; color: #888; cursor: not-allowed;"' : '';
                         let textoBoton = estaBloqueado ? '🚫 Agotado' : 'Añadir al Carrito';
                         let opacidadCard = estaBloqueado ? 'style="opacity: 0.5; border-color: #333; filter: grayscale(80%);"' : '';
@@ -214,21 +223,24 @@
                         </div>`;
                     });
                     htmlProductos += `</div>`;
-                    primera = false;
                 }
                 htmlBotones += '</div>';
                 document.getElementById('contenedor-menu').innerHTML = htmlBotones + htmlProductos;
+                
+                // RESTAURAR LAS NOTAS LUEGO DE RECREAR EL HTML
+                for(let id in notasGuardadas) {
+                    let input = document.getElementById(id);
+                    if(input) input.value = notasGuardadas[id];
+                }
+                
             } catch (err) {
                 document.getElementById('contenedor-menu').innerHTML = `<div class="error-carga">⚠️ Error al renderizar el menú local: ${err.message}</div>`;
             }
         }
 
         cargarMenuLocal();
-
-        // Refrescar estado del inventario cada 60 segundos por si hay bloqueos manuales nuevos
         setInterval(cargarMenuLocal, 60000);
 
-        // ===================== FUNCIONES DEL MENÚ =====================
         function mostrarCategoria(idCat) {
             document.querySelectorAll('.categoria-seccion').forEach(d => d.style.display = 'none');
             document.querySelectorAll('.btn-categoria').forEach(b => b.classList.remove('activa'));
@@ -236,7 +248,6 @@
             document.getElementById(`btn-${idCat}`).classList.add('activa');
         }
 
-        // ===================== CARGA DE TARJETA (solo para mostrar) =====================
         fetch('/api/config/tarjeta')
             .then(r => r.json())
             .then(data => {
@@ -246,7 +257,6 @@
                 document.getElementById('numero-tarjeta').innerText = '1234 5678 9012 3456 (default)';
             });
 
-        // ===================== CARRITO =====================
         function agregarAlCarrito(nombre, precio, idInput) {
             let comentario = document.getElementById(`nota-${idInput}`).value;
             let existente = carrito.find(i => i.nombre === nombre && i.comentario === comentario);
@@ -282,7 +292,6 @@
         function abrirCarrito() { document.getElementById('modal-carrito').style.display = 'flex'; }
         function cerrarCarrito() { document.getElementById('modal-carrito').style.display = 'none'; }
 
-        // ===================== MÉTODO DE PAGO Y FOTO =====================
         function verificarMetodoPago() {
             let metodo = document.getElementById('metodo-pago').value;
             let div = document.getElementById('info-transferencia');
@@ -327,7 +336,6 @@
             reader.readAsDataURL(file);
         }
 
-        // ===================== ENVIAR PEDIDO (AHORA USA LA API) =====================
         async function enviarPedido() {
             if (carrito.length === 0) return alert("Tu carrito está vacío.");
             let nombre = document.getElementById('nombre-cliente').value.trim();
@@ -387,7 +395,6 @@
             }
         }
 
-        // ===================== EXPONER FUNCIONES AL SCOPE GLOBAL =====================
         window.mostrarCategoria = mostrarCategoria;
         window.agregarAlCarrito = agregarAlCarrito;
         window.eliminarDelCarrito = eliminarDelCarrito;
