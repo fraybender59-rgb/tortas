@@ -31,10 +31,6 @@
         .input-form { width: 100%; padding: 10px; margin-bottom: 10px; background: #222; color: #fff; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; font-family: monospace; }
         .btn-confirmar { background: #8bc34a; color: #111; width: 100%; padding: 15px; border: none; font-weight: bold; font-size: 1.1rem; border-radius: 5px; cursor: pointer; margin-top: 10px; font-family: monospace; }
         .btn-cerrar-modal { background: #444; color: #fff; width: 100%; padding: 10px; border: none; margin-top: 10px; border-radius: 5px; cursor: pointer; font-family: monospace; }
-        .file-upload-wrapper { display: flex; flex-direction: column; align-items: center; gap: 10px; background: #222; padding: 15px; border-radius: 5px; border: 1px dashed #8bc34a; margin-bottom: 10px; }
-        .btn-upload { background: #3f51b5; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: monospace; }
-        .estado-foto-ok { color: #8bc34a; font-weight: bold; }
-        .estado-foto-error { color: #f44336; }
         .error-carga { color: #f44336; text-align: center; padding: 20px; background: #1a1a22; border-radius: 8px; margin: 20px 0; }
     </style>
 </head>
@@ -65,13 +61,8 @@
                 <option value="Transferencia">Transferencia Bancaria</option>
             </select>
             <div id="info-transferencia" style="display:none;">
-                <p style="color:#aaa; font-size:0.9rem;">Transfiere a esta cuenta y sube la captura de pantalla:</p>
+                <p style="color:#aaa; font-size:0.9rem;">Transfiere a esta cuenta:</p>
                 <div style="background:#000; padding:10px; text-align:center; font-size:1.2rem; color:#8bc34a; letter-spacing:2px; margin-bottom:10px; border-radius:5px;" id="numero-tarjeta">Cargando tarjeta...</div>
-                <div class="file-upload-wrapper">
-                    <input type="file" id="input-foto" accept="image/*" style="display:none;" onchange="procesarFoto(event)">
-                    <button class="btn-upload" onclick="document.getElementById('input-foto').click()">📸 Subir Captura de Pago</button>
-                    <span id="estado-foto" style="color:#aaa; font-size:0.8rem;">Ninguna foto seleccionada</span>
-                </div>
             </div>
             <button class="btn-confirmar" onclick="enviarPedido()">🚀 Enviar Pedido a Cocina</button>
         </div>
@@ -80,7 +71,7 @@
 
     <script>
         let carrito = [];
-        let fotoBase64 = null;
+        const TELEFONO_WHATSAPP = "527295696184";
 
         const menuLocal = {
             "Sencillas": [
@@ -145,7 +136,6 @@
             ]
         };
 
-        // Identificamos la categoría activa para mantenerla al recargar
         let categoriaActualActiva = "Sencillas";
 
         async function cargarMenuLocal() {
@@ -162,13 +152,11 @@
                 console.warn("No se pudo conectar con el inventario en vivo.", err);
             }
 
-            // GUARDAMOS LAS NOTAS ANTES DE RECREAR EL MENÚ
             let notasGuardadas = {};
             document.querySelectorAll('.input-comentario').forEach(input => {
                 if(input.value) notasGuardadas[input.id] = input.value;
             });
 
-            // GUARDAR LA CATEGORÍA ABIERTA ACTUALMENTE
             const btnActivo = document.querySelector('.btn-categoria.activa');
             if (btnActivo) {
                 categoriaActualActiva = btnActivo.innerText;
@@ -227,7 +215,6 @@
                 htmlBotones += '</div>';
                 document.getElementById('contenedor-menu').innerHTML = htmlBotones + htmlProductos;
                 
-                // RESTAURAR LAS NOTAS LUEGO DE RECREAR EL HTML
                 for(let id in notasGuardadas) {
                     let input = document.getElementById(id);
                     if(input) input.value = notasGuardadas[id];
@@ -299,41 +286,7 @@
                 div.style.display = 'block';
             } else {
                 div.style.display = 'none';
-                fotoBase64 = null;
-                document.getElementById('estado-foto').innerText = 'Ninguna foto seleccionada';
-                document.getElementById('estado-foto').className = '';
-                document.getElementById('input-foto').value = "";
             }
-        }
-
-        function procesarFoto(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    let w = img.width, h = img.height;
-                    const maxW = 800, maxH = 800;
-                    if (w > maxW || h > maxH) {
-                        const ratio = Math.min(maxW / w, maxH / h);
-                        w = Math.round(w * ratio);
-                        h = Math.round(h * ratio);
-                    }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = w;
-                    canvas.height = h;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, w, h);
-                    fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                    const el = document.getElementById('estado-foto');
-                    el.innerText = '✅ Imagen comprimida y lista';
-                    el.className = 'estado-foto-ok';
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
         }
 
         async function enviarPedido() {
@@ -342,13 +295,9 @@
             if (!nombre) return alert("Por favor ingresa tu nombre.");
             let metodo = document.getElementById('metodo-pago').value;
 
-            if (metodo === 'Transferencia' && !fotoBase64) {
-                return alert("Por favor sube la captura de pantalla de tu transferencia para verificar el pago.");
-            }
-
             let btn = document.querySelector('.btn-confirmar');
             let txtOriginal = btn.innerText;
-            btn.innerText = "⏳ Enviando...";
+            btn.innerText = "⏳ Procesando...";
             btn.disabled = true;
 
             let total = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
@@ -359,40 +308,47 @@
                 total: total,
                 estado: "Pendiente",
                 metodoPagoInicial: metodo,
-                comprobanteAdjunto: fotoBase64,
                 origen: 'cliente'
             };
 
+            // 1. Guardar en Backend
             try {
-                const res = await fetch('/api/pedidos', {
+                await fetch('/api/pedidos', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(pedido)
                 });
-
-                if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-
-                const result = await res.json();
-                if (result.success) {
-                    alert("✅ ¡Tu pedido ha sido enviado a la cocina de La Queen!");
-                    carrito = [];
-                    actualizarCarrito();
-                    cerrarCarrito();
-                    document.getElementById('nombre-cliente').value = '';
-                    fotoBase64 = null;
-                    document.getElementById('estado-foto').innerText = 'Ninguna foto seleccionada';
-                    document.getElementById('estado-foto').className = '';
-                    document.getElementById('input-foto').value = "";
-                } else {
-                    throw new Error(result.error || 'Error desconocido');
-                }
             } catch (err) {
-                console.error(err);
-                alert("Hubo un error al enviar tu pedido: " + err.message);
-            } finally {
-                btn.innerText = txtOriginal;
-                btn.disabled = false;
+                console.warn("No se pudo registrar en backend, procediendo a WhatsApp...", err);
             }
+
+            // 2. Construir mensaje de WhatsApp
+            let mensajeWA = `👑 *NUEVO PEDIDO - LA QUEEN*\n\n`;
+            mensajeWA += `👤 *Cliente:* ${nombre}\n`;
+            mensajeWA += `💳 *Método de Pago:* ${metodo}\n\n`;
+            mensajeWA += `📝 *Detalle del Pedido:*\n`;
+
+            carrito.forEach(item => {
+                mensajeWA += `• ${item.cantidad}x ${item.nombre} ($${item.precio * item.cantidad})`;
+                if (item.comentario) {
+                    mensajeWA += `\n   _Nota: ${item.comentario}_`;
+                }
+                mensajeWA += `\n`;
+            });
+
+            mensajeWA += `\n💰 *Total a Pagar:* $${total.toFixed(2)}`;
+
+            // 3. Redirigir a WhatsApp
+            const urlWhatsApp = `https://api.whatsapp.com/send?phone=${TELEFONO_WHATSAPP}&text=${encodeURIComponent(mensajeWA)}`;
+            
+            carrito = [];
+            actualizarCarrito();
+            cerrarCarrito();
+            document.getElementById('nombre-cliente').value = '';
+            btn.innerText = txtOriginal;
+            btn.disabled = false;
+
+            window.location.href = urlWhatsApp;
         }
 
         window.mostrarCategoria = mostrarCategoria;
@@ -401,8 +357,8 @@
         window.abrirCarrito = abrirCarrito;
         window.cerrarCarrito = cerrarCarrito;
         window.verificarMetodoPago = verificarMetodoPago;
-        window.procesarFoto = procesarFoto;
         window.enviarPedido = enviarPedido;
     </script>
 </body>
 </html>
+
