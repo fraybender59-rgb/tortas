@@ -1,43 +1,26 @@
+require('dotenv').config();
+global.WebSocket = require('ws');
 const express = require('express');
 const cors = require('cors');
-const admin = require('firebase-admin');
+const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 
 const app = express();
 
-// 👉 CORRECCIÓN 1: Aumentar el límite de tamaño para permitir subir fotos en Base64 sin dar Error 500.
+// Aumentar el límite de tamaño para permitir subir fotos en Base64
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// 👉 CORRECCIÓN 2: Inicialización segura de Firebase (Compatible con Local y Vercel).
-try {
-    if (!admin.apps.length) {
-        // Verifica si estamos en Vercel leyendo las variables de entorno
-        if (process.env.FIREBASE_PROJECT_ID) {
-            admin.initializeApp({
-                credential: admin.credential.cert({
-                    projectId: process.env.FIREBASE_PROJECT_ID,
-                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                    // Reemplaza los saltos de línea escapados para que Vercel los lea bien
-                    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') 
-                })
-            });
-            console.log("✅ Firebase conectado correctamente (Modo Vercel)");
-        } else {
-            // Si no hay variables de entorno, asume que estamos en local y usa el archivo JSON
-            const serviceAccount = require('./firebase-key.json'); 
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount)
-            });
-            console.log("✅ Firebase conectado correctamente (Modo Local)");
-        }
-    }
-} catch (err) {
-    console.error("❌ ERROR FATAL: No se pudo inicializar Firebase.", err.message);
+// Inicialización del cliente de Supabase
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+    console.error("❌ ERROR FATAL: No se encontraron las variables SUPABASE_URL y/o SUPABASE_SERVICE_KEY en las variables de entorno.");
 }
 
-const db = admin.apps.length ? admin.firestore() : null;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Servir archivos HTML estáticos (administracion.html, clientes.html, etc.)
 app.use(express.static(path.join(__dirname)));
@@ -46,64 +29,92 @@ app.use(express.static(path.join(__dirname)));
 // RUTAS DE INVENTARIO
 // ==========================================
 app.get('/api/inventario', async (req, res) => {
-    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
     try {
-        const snapshot = await db.collection('inventario').get();
-        const inventario = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        res.status(200).json(inventario);
+        const { data, error } = await supabase
+            .from('inventario')
+            .select('*');
+
+        if (error) throw error;
+        res.status(200).json(data);
     } catch (error) {
-        console.error("Error al obtener inventario:", error);
+        console.error("Error al obtener inventario:", error.message);
         res.status(500).json({ error: "Error interno al leer inventario" });
     }
 });
 
 app.post('/api/inventario', async (req, res) => {
-    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
     try {
         const { nombre, cantidad } = req.body;
-        const docRef = await db.collection('inventario').add({ nombre, cantidad: cantidad || 0, bloqueado: false, horaBloqueo: null });
-        res.status(201).json({ success: true, id: docRef.id });
+        
+        const { data, error } = await supabase
+            .from('inventario')
+            .insert([{ 
+                nombre, 
+                cantidad: cantidad || 0, 
+                bloqueado: false, 
+                horaBloqueo: null 
+            }])
+            .select();
+
+        if (error) throw error;
+        res.status(201).json({ success: true, id: data[0].id });
     } catch (error) {
-        console.error("Error al crear producto:", error);
+        console.error("Error al crear producto:", error.message);
         res.status(500).json({ error: "Error interno al crear producto" });
     }
 });
 
 app.post('/api/inventario/modificar', async (req, res) => {
-    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
     try {
         const { nombre, cantidad, operacion } = req.body;
-        const snapshot = await db.collection('inventario').where('nombre', '==', nombre).limit(1).get();
-        
-        if (snapshot.empty) return res.status(404).json({ error: "Producto no encontrado" });
 
-        const doc = snapshot.docs[0];
-        const data = doc.data();
-        let nuevoStock = data.cantidad || 0;
+        // Buscar el producto por nombre
+        const { data: producto, error: searchError } = await supabase
+            .from('inventario')
+            .select('*')
+            .eq('nombre', nombre)
+            .maybeSingle();
 
-        if (operacion === 'sumar') nuevoStock += parseInt(cantidad);
-        if (operacion === 'restar') nuevoStock -= parseInt(cantidad);
+        if (searchError || !producto) {
+            return res.status(404).json({ error: "Producto no encontrado" });
+        }
 
-        await doc.ref.update({ cantidad: nuevoStock });
+        let nuevoStock = producto.cantidad || 0;
+        if (operacion === 'sumar') nuevoStock += parseInt(cantidad, 10);
+        if (operacion === 'restar') nuevoStock -= parseInt(cantidad, 10);
+
+        // Actualizar el stock calculado
+        const { error: updateError } = await supabase
+            .from('inventario')
+            .update({ cantidad: nuevoStock })
+            .eq('nombre', nombre);
+
+        if (updateError) throw updateError;
         res.status(200).json({ success: true, nuevoStock });
     } catch (error) {
-        console.error("Error al modificar stock:", error);
+        console.error("Error al modificar stock:", error.message);
         res.status(500).json({ error: "Error interno al modificar stock" });
     }
 });
 
 app.post('/api/inventario/bloquear', async (req, res) => {
-    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
     try {
         const { nombre, bloqueado, horaBloqueo } = req.body;
-        const snapshot = await db.collection('inventario').where('nombre', '==', nombre).limit(1).get();
-        
-        if (snapshot.empty) return res.status(404).json({ error: "Producto no encontrado" });
 
-        await snapshot.docs[0].ref.update({ bloqueado, horaBloqueo });
+        const { data, error } = await supabase
+            .from('inventario')
+            .update({ bloqueado, horaBloqueo })
+            .eq('nombre', nombre)
+            .select();
+
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            return res.status(404).json({ error: "Producto no encontrado" });
+        }
+
         res.status(200).json({ success: true });
     } catch (error) {
-        console.error("Error al bloquear producto:", error);
+        console.error("Error al bloquear producto:", error.message);
         res.status(500).json({ error: "Error interno al bloquear" });
     }
 });
@@ -112,90 +123,106 @@ app.post('/api/inventario/bloquear', async (req, res) => {
 // RUTAS DE PEDIDOS Y CUENTAS
 // ==========================================
 app.get('/api/pedidos', async (req, res) => {
-    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
     try {
-        const snapshot = await db.collection('pedidos').orderBy('fecha', 'desc').limit(100).get();
-        const pedidos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        res.status(200).json(pedidos);
+        const { data, error } = await supabase
+            .from('pedidos')
+            .select('*')
+            .order('fecha', { ascending: false })
+            .limit(100);
+
+        if (error) throw error;
+        res.status(200).json(data);
     } catch (error) {
-        console.error("Error al obtener pedidos:", error);
+        console.error("Error al obtener pedidos:", error.message);
         res.status(500).json({ error: "Error al cargar pedidos" });
     }
 });
 
 app.post('/api/pedidos', async (req, res) => {
-    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
     try {
-        const pedidoData = req.body;
-        pedidoData.fecha = new Date().toISOString();
-        
-        const docRef = await db.collection('pedidos').add(pedidoData);
-        res.status(201).json({ success: true, id: docRef.id });
+        const pedidoData = { ...req.body, fecha: new Date().toISOString() };
+
+        const { data, error } = await supabase
+            .from('pedidos')
+            .insert([pedidoData])
+            .select();
+
+        if (error) throw error;
+        res.status(201).json({ success: true, id: data[0].id });
     } catch (error) {
-        console.error("Error al guardar pedido:", error);
+        console.error("Error al guardar pedido:", error.message);
         res.status(500).json({ error: "Error interno al guardar el pedido" });
     }
 });
 
 app.put('/api/pedidos/:id', async (req, res) => {
-    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
     try {
         const { id } = req.params;
         const updates = req.body;
-        await db.collection('pedidos').doc(id).update(updates);
+
+        const { error } = await supabase
+            .from('pedidos')
+            .update(updates)
+            .eq('id', id);
+
+        if (error) throw error;
         res.status(200).json({ success: true });
     } catch (error) {
-        console.error("Error al actualizar pedido:", error);
+        console.error("Error al actualizar pedido:", error.message);
         res.status(500).json({ error: "Error al actualizar" });
     }
 });
 
 app.get('/api/cuentas', async (req, res) => {
-    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
     try {
-        const snapshot = await db.collection('pedidos').get();
-        const cuentas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        res.status(200).json(cuentas);
+        const { data, error } = await supabase
+            .from('pedidos')
+            .select('*');
+
+        if (error) throw error;
+        res.status(200).json(data);
     } catch (error) {
-        console.error("Error al obtener cuentas:", error);
+        console.error("Error al obtener cuentas:", error.message);
         res.status(500).json({ error: "Error al cargar cuentas" });
     }
 });
 
-// 👉 AQUÍ ESTÁ LA MEJORA: Endpoint PUT fortalecido para asegurar el cobro en Firestore
 app.put('/api/cuentas/:id', async (req, res) => {
-    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
     try {
         const { id } = req.params;
-        const datosAActualizar = req.body; // Recibe el estado: 'Cobrado' desde administracion.html
-        
-        const cuentaRef = db.collection('pedidos').doc(id);
-        const doc = await cuentaRef.get();
-        
-        // Verificamos primero si la cuenta existe en Firestore
-        if (!doc.exists) {
+        const datosAActualizar = req.body;
+
+        const { data, error } = await supabase
+            .from('pedidos')
+            .update(datosAActualizar)
+            .eq('id', id)
+            .select();
+
+        if (error) throw error;
+        if (!data || data.length === 0) {
             return res.status(404).json({ error: "La cuenta no fue encontrada en la base de datos" });
         }
 
-        // Actualizamos los datos
-        await cuentaRef.update(datosAActualizar);
-        
-        // Respondemos con éxito al frontend para que quite la cuenta de la pantalla
         res.status(200).json({ success: true, message: "Cuenta cobrada y actualizada correctamente" });
     } catch (error) {
-        console.error("Error al modificar cuenta:", error);
+        console.error("Error al modificar cuenta:", error.message);
         res.status(500).json({ error: "Error interno al modificar la cuenta" });
     }
 });
 
 app.delete('/api/cuentas/:id', async (req, res) => {
-    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
     try {
         const { id } = req.params;
-        await db.collection('pedidos').doc(id).delete();
+
+        const { error } = await supabase
+            .from('pedidos')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
         res.status(200).json({ success: true });
     } catch (error) {
-        console.error("Error al eliminar cuenta:", error);
+        console.error("Error al eliminar cuenta:", error.message);
         res.status(500).json({ error: "Error al eliminar" });
     }
 });
@@ -204,15 +231,20 @@ app.delete('/api/cuentas/:id', async (req, res) => {
 // RUTA PARA OBTENER COMPROBANTE
 // ==========================================
 app.get('/api/comprobantes/:id', async (req, res) => {
-    if (!db) return res.status(500).json({ error: "Base de datos no conectada" });
     try {
-        const doc = await db.collection('pedidos').doc(req.params.id).get();
-        if (!doc.exists) return res.status(404).json({ error: "No encontrado" });
-        
-        const data = doc.data();
+        const { id } = req.params;
+
+        const { data, error } = await supabase
+            .from('pedidos')
+            .select('comprobanteAdjunto')
+            .eq('id', id)
+            .maybeSingle();
+
+        if (error || !data) return res.status(404).json({ error: "No encontrado" });
+
         res.status(200).json({ imagen: data.comprobanteAdjunto || null });
     } catch (error) {
-        console.error("Error al obtener comprobante:", error);
+        console.error("Error al obtener comprobante:", error.message);
         res.status(500).json({ error: "Error al cargar imagen" });
     }
 });
@@ -227,7 +259,7 @@ app.get('/api/config/tarjeta', async (req, res) => {
 // ==========================================
 // MANEJO DE RUTAS NO ENCONTRADAS Y ERRORES GLOBALES
 // ==========================================
-app.use((req, res, next) => {
+app.use((req, res) => {
     res.status(404).json({ error: "Ruta no encontrada" });
 });
 
@@ -236,9 +268,13 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: "Error interno del servidor" });
 });
 
-// 👉 CONFIGURACIÓN DEL PUERTO (Evita el error 504)
+// Exportar app para entorno Serverless / Vercel
+module.exports = app;
+
+// Escuchar servidor en entorno local o producción tradicional
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-    console.log(`Servidor corriendo en el puerto ${port}`);
+    console.log(`✅ Servidor Supabase corriendo en el puerto ${port}`);
 });
+
 
